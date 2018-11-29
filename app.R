@@ -6,7 +6,7 @@
 # This app displays research topics in psychology
 # identified using topic modeling of PSYNDEX data
 #    
-# Reference: Bittermann & Fischer (2016), doi: https://doi.org/10.1027/2151-2604/a000318
+# Reference: Bittermann & Fischer (2018), doi: https://doi.org/10.1027/2151-2604/a000318
 
 
 # packages ----
