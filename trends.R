@@ -62,23 +62,3 @@ trends.ab <- function(von, bis){
   return(results)
   
 }
-
-xyplot(hot_ts,
-       layout = c(5,2),
-       col = c("black"),
-       ylim = c(0,0.015),
-       ylab = expression(paste("Mean ",theta)),
-       xlab = "Year",
-       type = c("l", "g", "r"),
-       scales = list(x = list(alternating = FALSE)),
-       main = "Hot Topics")
-
-xyplot(cold_ts,
-       layout = c(5,2),
-       col = "black",
-       ylim = c(0,0.015),
-       ylab = expression(paste("Mean ",theta)),
-       xlab = "Year",
-       type = c("l", "g", "r"),
-       scales = list(x = list(alternating = FALSE)),
-       main = "Cold Topics")
