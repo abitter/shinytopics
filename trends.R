@@ -19,14 +19,10 @@
 # trends.ab(von, bis)[[3]] # hot_ts for plot
 # trends.ab(von, bis)[[4]] # cold_ts for plot
 
-
-trends.ab <- function(von, bis){
-  #data
-  theta_year <- readRDS("data/theta_year.rds")
-  theta_mean_by_year <- readRDS("data/theta_mean_by_year.rds")
-  theta_mean_by_year_time <- readRDS("data/theta_time.rds")
-  theta_mean_by_year_ts <- readRDS("data/theta_ts.rds")
-  years <- readRDS("data/years.rds")
+trends.ab <- function(von, bis, 
+                      theta_year, theta_mean_by_year, 
+                      theta_mean_by_year_time, 
+                      theta_mean_by_year_ts, years){
   
   #Linear model
   theta_mean_lm <- apply(theta_mean_by_year[von:bis,], 2, function(x) lm(x ~ theta_mean_by_year_time[von:bis])) # 2 is margin for columns
