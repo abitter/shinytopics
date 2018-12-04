@@ -15,12 +15,19 @@ library(lattice)
 
 # data ----
 theta_year <- readRDS("data/theta_year.rds")
+theta_time <- readRDS("data/theta_time.rds")
+theta_ts <- readRDS("data/theta_ts.rds")
+years <- readRDS("data/years.rds")
+
+# sources ----
+source("trends.R")
+
 
 # Define UI ----
 ui <- fluidPage(
    
    # Application title
-   titlePanel("Shiny Topics v0.1"),
+   titlePanel("Shiny Topics v0.2"),
    
    # Sidebar
    sidebarLayout(
@@ -38,8 +45,8 @@ ui <- fluidPage(
                     label = h4("Zeitraum:"),
                     min = 1980,
                     max = 2016,
-                    value = c(2010, 2016),
-                    sep="",
+                    value = c(1980, 2016),
+                    sep = "",
                     ticks = FALSE),
        
        helpText(br(),
@@ -50,16 +57,32 @@ ui <- fluidPage(
                 )),
        
        br(),
-       a(img(src = "logo.png", height = 328/7, width = 1445/7), href = "https://www.leibniz-psychology.org", target="_blank")
-       
-      ),
+       #a(img(src = "logo.png", height = 328/7, width = 1445/7), href = "https://www.leibniz-psychology.org", target="_blank")
+       a(img(src = "logo.png", height = "75%", width = "75%"), href = "https://www.leibniz-psychology.org", target="_blank")      ),
       
       # Main Panel
-      mainPanel(#width = 12,
-        #verbatimTextOutput("value"),
-        plotOutput("topicchart"),
-        br(),
-        plotOutput("topicchart2")
+      mainPanel(width = 9,
+        tabsetPanel(
+          tabPanel("Themen der Jahre", 
+                   br(),
+                   plotOutput("topicchart"),
+                   br(),
+                   plotOutput("topicchart2")
+                   ), 
+          tabPanel("Hot Topics", 
+                   br(),
+                   plotOutput("hot"),
+                   br(),
+                   verbatimTextOutput("hotterms")
+                   ),
+          tabPanel("Cold Topics", 
+                   br(),
+                   plotOutput("cold"),
+                   br(),
+                   verbatimTextOutput("coldterms")
+                   ),
+        type = "tabs")
+        
       )
    )
 )
@@ -74,6 +97,23 @@ server <- function(input, output) {
     input$year
   })
   
+  terms_hot <- reactive({
+    trends.ab(input$range[1]-1979, input$range[2]-1979)[[1]]
+  })
+  
+  terms_cold <- reactive({
+    trends.ab(input$range[1]-1979, input$range[2]-1979)[[2]]
+  })
+  
+  hot <- reactive({
+    trends.ab(input$range[1]-1979, input$range[2]-1979)[[3]]
+  })
+  
+  cold <- reactive({
+    trends.ab(input$range[1]-1979, input$range[2]-1979)[[4]]
+  })
+
+  
   #output$value <- renderPrint({finalInput()})
   
   output$topicchart <- renderPlot({
@@ -81,7 +121,7 @@ server <- function(input, output) {
              col = "#230d46ff", 
              main = list(paste("Populäre Forschungsthemen im Jahr", finalInput()), cex = 2),
              xlab = "Mittlere Dokument-Topic-Wahrscheinlichkeit",
-             scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.2))) # label font size
+             scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.1))) # label font size
   })
   
   output$topicchart2 <- renderPlot({
@@ -89,9 +129,36 @@ server <- function(input, output) {
              col = "#230d46ff", 
              main = list(paste0("Populäre Forschungsthemen im Zeitraum ", input$range[1], "–", input$range[2]), cex = 2),
              xlab = "Mittlere Dokument-Topic-Wahrscheinlichkeit",
-             scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.2))) # label font size
+             scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.1))) # label font size
   })
-   
+  
+  output$hot <- renderPlot({
+    xyplot(hot(),
+           layout = c(5,2),
+           col = c("black"),
+           ylim = c(0,0.015),
+           ylab = expression(paste("Mean ",theta)),
+           xlab = "Year",
+           type = c("l", "g", "r"),
+           scales = list(x = list(alternating = FALSE)),
+           main = "Hot Topics")
+  })
+  
+  output$cold <- renderPlot({
+    xyplot(cold(),
+           layout = c(5,2),
+           col = "black",
+           ylim = c(0,0.015),
+           ylab = expression(paste("Mean ",theta)),
+           xlab = "Year",
+           type = c("l", "g", "r"),
+           scales = list(x = list(alternating = FALSE)),
+           main = "Cold Topics")
+  })
+  
+  output$hotterms <- renderPrint({terms_hot()})
+  output$coldterms <- renderPrint({terms_cold()})
+
 }
 
 # Run the application ----
