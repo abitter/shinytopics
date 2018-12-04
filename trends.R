@@ -21,6 +21,13 @@
 
 
 trends.ab <- function(von, bis){
+  #data
+  theta_year <- readRDS("data/theta_year.rds")
+  theta_mean_by_year <- readRDS("data/theta_mean_by_year.rds")
+  theta_mean_by_year_time <- readRDS("data/theta_time.rds")
+  theta_mean_by_year_ts <- readRDS("data/theta_ts.rds")
+  years <- readRDS("data/years.rds")
+  
   #Linear model
   theta_mean_lm <- apply(theta_mean_by_year[von:bis,], 2, function(x) lm(x ~ theta_mean_by_year_time[von:bis])) # 2 is margin for columns
   theta_mean_lm_coef <- lapply(theta_mean_lm,function(x) coef(summary(x)))
