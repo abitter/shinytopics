@@ -108,7 +108,7 @@ server <- function(input, output) {
   output$topicchart <- renderPlot({
     barchart(head(sort(theta_year[as.character(finalInput()), ], decreasing = TRUE), 10)[10:1], 
              col = "#230d46ff", 
-             main = list(paste("Populäre Forschungsthemen im Jahr", finalInput()), cex = 2),
+             main = list(paste("Populäre Forschungsthemen im Jahr", finalInput()), cex = 1.75),
              xlab = "Mittlere Dokument-Topic-Wahrscheinlichkeit",
              scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.1))) # label font size
   })
@@ -116,7 +116,7 @@ server <- function(input, output) {
   output$topicchart2 <- renderPlot({
     barchart(head(sort(colMeans(theta_year[(input$range[1]-1979):(input$range[2]-1979), ]), decreasing = TRUE), 10)[10:1],
              col = "#230d46ff", 
-             main = list(paste0("Populäre Forschungsthemen im Zeitraum ", input$range[1], "–", input$range[2]), cex = 2),
+             main = list(paste0("Populäre Forschungsthemen im Zeitraum ", input$range[1], "–", input$range[2]), cex = 1.75),
              xlab = "Mittlere Dokument-Topic-Wahrscheinlichkeit",
              scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.1))) # label font size
   })
@@ -130,7 +130,7 @@ server <- function(input, output) {
            xlab = "Year",
            type = c("l", "g", "r"),
            scales = list(x = list(alternating = FALSE)),
-           main = list(paste0("Hot Topics im Zeitraum ", input$range[1], "–", input$range[2]), cex = 1.5))
+           main = list(paste0("Hot Topics für den Zeitraum ", input$range[1], "–", input$range[2]), cex = 1.75))
   })
   
   output$cold <- renderPlot({
@@ -142,7 +142,7 @@ server <- function(input, output) {
            xlab = "Year",
            type = c("l", "g", "r"),
            scales = list(x = list(alternating = FALSE)),
-           main = list(paste0("Cold Topics im Zeitraum ", input$range[1], "–", input$range[2]), cex = 1.5))
+           main = list(paste0("Cold Topics für den Zeitraum ", input$range[1], "–", input$range[2]), cex = 1.75))
   })
   
   output$hotterms <- renderPrint({trends()[[1]]})
