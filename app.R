@@ -15,8 +15,7 @@ library(lattice)
 
 # data ----
 theta_year <- readRDS("data/theta_year.rds")
-theta_mean_by_year <- readRDS("data/theta_year.rds")
-colnames(theta_mean_by_year) <- 1:500
+theta_mean_by_year <- readRDS("data/theta_mean_by_year.rds")
 theta_mean_by_year_time <- readRDS("data/theta_time.rds")
 theta_mean_by_year_ts <- readRDS("data/theta_ts.rds")
 years <- readRDS("data/years.rds")
