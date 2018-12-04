@@ -15,6 +15,10 @@ library(lattice)
 
 # data ----
 theta_year <- readRDS("data/theta_year.rds")
+theta_mean_by_year <- readRDS("data/theta_mean_by_year.rds")
+theta_mean_by_year_time <- readRDS("data/theta_time.rds")
+theta_mean_by_year_ts <- readRDS("data/theta_ts.rds")
+years <- readRDS("data/years.rds")
 
 # sources ----
 source("trends.R")
@@ -94,22 +98,10 @@ server <- function(input, output) {
     input$year
   })
   
-  terms_hot <- reactive({
-    trends.ab(input$range[1]-1979, input$range[2]-1979)[[1]]
+  trends <- reactive({
+    trends.ab(input$range[1]-1979, input$range[2]-1979, 
+              theta_year, theta_mean_by_year, theta_mean_by_year_time, theta_mean_by_year_ts, years)
   })
-  
-  terms_cold <- reactive({
-    trends.ab(input$range[1]-1979, input$range[2]-1979)[[2]]
-  })
-  
-  hot <- reactive({
-    trends.ab(input$range[1]-1979, input$range[2]-1979)[[3]]
-  })
-  
-  cold <- reactive({
-    trends.ab(input$range[1]-1979, input$range[2]-1979)[[4]]
-  })
-
   
   #output$value <- renderPrint({finalInput()})
   
@@ -130,7 +122,7 @@ server <- function(input, output) {
   })
   
   output$hot <- renderPlot({
-    xyplot(hot(),
+    xyplot(trends()[[3]],
            layout = c(5,2),
            col = c("black"),
            ylim = c(0,0.015),
@@ -138,11 +130,11 @@ server <- function(input, output) {
            xlab = "Year",
            type = c("l", "g", "r"),
            scales = list(x = list(alternating = FALSE)),
-           main = "Hot Topics")
+           main = list(paste0("Hot Topics im Zeitraum ", input$range[1], "–", input$range[2]), cex = 1.5))
   })
   
   output$cold <- renderPlot({
-    xyplot(cold(),
+    xyplot(trends()[[4]],
            layout = c(5,2),
            col = "black",
            ylim = c(0,0.015),
@@ -150,11 +142,11 @@ server <- function(input, output) {
            xlab = "Year",
            type = c("l", "g", "r"),
            scales = list(x = list(alternating = FALSE)),
-           main = "Cold Topics")
+           main = list(paste0("Cold Topics im Zeitraum ", input$range[1], "–", input$range[2]), cex = 1.5))
   })
   
-  output$hotterms <- renderPrint({terms_hot()})
-  output$coldterms <- renderPrint({terms_cold()})
+  output$hotterms <- renderPrint({trends()[[1]]})
+  output$coldterms <- renderPrint({trends()[[2]]})
 
 }
 
