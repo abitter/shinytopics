@@ -53,8 +53,15 @@ trends.ab <- function(von, bis,
   colnames(hot_ts) <- c(1:10) 
   colnames(cold_ts) <- c(1:10)
   
-  terms_hot <- colnames(theta_year[,topics_hot[1:10]])
-  terms_cold <- colnames(theta_year[,topics_cold[1:10]])
+  terms_hot <- as.data.frame(colnames(theta_year[,topics_hot[1:10]]))
+  terms_hot$NR <- row.names(terms_hot)
+  terms_hot[ ,c(1,2)] <- terms_hot[ ,c(2,1)]
+  names(terms_hot) <- c("NR", "Wahrscheinlichste Begriffe")
+  
+  terms_cold <- as.data.frame(colnames(theta_year[,topics_cold[1:10]]))
+  terms_cold$NR <- row.names(terms_cold)
+  terms_cold[ ,c(1,2)] <- terms_cold[ ,c(2,1)]
+  names(terms_cold) <- c("NR", "Wahrscheinlichste Begriffe")
   
   results <- list()
   results[1] <- list(terms_hot)
