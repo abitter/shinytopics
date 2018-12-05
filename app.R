@@ -10,8 +10,8 @@
 
 
 # packages ----
-suppressPackageStartupMessages( if (!require("pacman")) install.packages("pacman") )
-pacman::p_load(shiny, lattice)
+library(shiny)
+library(lattice)
 
 # data ----
 theta_year <- readRDS("data/theta_year.rds")
