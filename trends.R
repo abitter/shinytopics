@@ -13,7 +13,7 @@
 trends.ab <- function(von, bis, 
                       theta_year, theta_mean_by_year, 
                       theta_mean_by_year_time, 
-                      theta_mean_by_year_ts, years){
+                      theta_mean_by_year_ts, years, topic){
   
   #Linear model
   theta_mean_lm <- apply(theta_mean_by_year[von:bis,], 2, function(x) lm(x ~ theta_mean_by_year_time[von:bis])) # 2 is margin for columns

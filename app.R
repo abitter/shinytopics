@@ -136,7 +136,7 @@ server <- function(input, output) {
   
   trends <- reactive({
     trends.ab(input$range[1]-1979, input$range[2]-1979, 
-              theta_year, theta_mean_by_year, theta_mean_by_year_time, theta_mean_by_year_ts, years)
+              theta_year, theta_mean_by_year, theta_mean_by_year_time, theta_mean_by_year_ts, years, topic)
   })
 
   
