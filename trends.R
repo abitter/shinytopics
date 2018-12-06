@@ -40,20 +40,19 @@ trends.ab <- function(von, bis,
   
   hot_ts <- ts(theta_mean_by_year_ts[von:bis,topics_hot[1:10]], start = as.integer(years[von]))
   cold_ts <- ts(theta_mean_by_year_ts[von:bis,topics_cold[1:10]], start = as.integer(years[von]))
-  # each plot gets a fixed label, that matches the print output of terms_hot and terms_cold
-  colnames(hot_ts) <- c(1:10) 
-  colnames(cold_ts) <- c(1:10)
   
-  terms_hot <- as.data.frame(colnames(theta_year[,topics_hot[1:10]]))
-  terms_hot$NR <- row.names(terms_hot)
-  terms_hot[ ,c(1,2)] <- terms_hot[ ,c(2,1)]
-  names(terms_hot) <- c("NR", "Wahrscheinlichste Begriffe")
+  # tables
+  terms_hot <- topic[topics_hot[1:10],-3]
+  terms_hot$rank <- 1:10
+  terms_hot[ ,c(1,2,3)] <- terms_hot[ ,c(3,1,2)]
+  names(terms_hot) <- c("Rang", "NR", "Thema")
   
-  terms_cold <- as.data.frame(colnames(theta_year[,topics_cold[1:10]]))
-  terms_cold$NR <- row.names(terms_cold)
-  terms_cold[ ,c(1,2)] <- terms_cold[ ,c(2,1)]
-  names(terms_cold) <- c("NR", "Wahrscheinlichste Begriffe")
+  terms_cold <- topic[topics_cold[1:10],-3]
+  terms_cold$rank <- 1:10
+  terms_cold[ ,c(1,2,3)] <- terms_cold[ ,c(3,1,2)]
+  names(terms_cold) <- c("Rang", "NR", "Thema")
   
+  # results
   results <- list()
   results[1] <- list(terms_hot)
   results[2] <- list(terms_cold)

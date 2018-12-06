@@ -19,6 +19,8 @@ theta_mean_by_year <- readRDS("data/theta_mean_by_year.rds")
 theta_mean_by_year_time <- readRDS("data/theta_mean_by_year_time.rds")
 theta_mean_by_year_ts <- readRDS("data/theta_mean_by_year_ts.rds")
 years <- readRDS("data/years.rds")
+topdocs_string <- readRDS("data/topdocs_string.rds")
+topic <- readRDS("data/topic.rds")
 
 # sources ----
 source("trends.R")
@@ -28,7 +30,7 @@ source("trends.R")
 ui <- fluidPage(
    
    # Application title
-   titlePanel("Shiny Topics v0.2.1"),
+   titlePanel("Shiny Topics v0.3"),
    
    # Sidebar
    sidebarLayout(
@@ -38,9 +40,9 @@ ui <- fluidPage(
        
        numericInput("year", 
                     label = h4("Jahr:"),
-                    value = 2017, 
+                    value = as.numeric(years[length(years)]), 
                     min = 1980, 
-                    max = 2017),
+                    max = as.numeric(years[length(years)])),
        
        # slider color
        #tags$style(HTML(".js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #a2b21e}")),
@@ -48,13 +50,13 @@ ui <- fluidPage(
        sliderInput("range",
                     label = h4("Zeitraum:"),
                     min = 1980,
-                    max = 2017,
-                    value = c(1980, 2017),
+                    max = as.numeric(years[length(years)]),
+                    value = c(1980, as.numeric(years[length(years)])),
                     sep = "",
                     ticks = FALSE),
        
        helpText(br(),
-                p("Die Forschungsthemen der Psychologie aus dem deutschsprachigen Raum wurden mit Hilfe von",
+                p("Die Themen der psychologischen Fachliteratur aus dem deutschsprachigen Raum wurden mit Hilfe von",
                 a("Topic Modeling", href = "https://doi.org/10.1027/2151-2604/a000318", target="_blank"),
                 "identifiziert, basierend auf der Referenzdatenbank",
                 a("PSYNDEX.", href = "https://www.psyndex.de", target="_blank")),
@@ -65,7 +67,11 @@ ui <- fluidPage(
                 ),
        
        br(),
-       a(img(src = "logo.png", height = "75%", width = "75%"), href = "https://www.leibniz-psychology.org", target="_blank")      ),
+       helpText(a("Feedback", href = "https://leibniz-psychology.org/mitarbeiter/profil-andre-bittermann/", target="_blank")),
+       br(),
+       br(),
+       a(img(src = "logo.png", height = "75%", width = "75%"), href = "https://www.leibniz-psychology.org", target="_blank")
+       ),
       
       # Main Panel
       mainPanel(width = 9,
@@ -88,6 +94,24 @@ ui <- fluidPage(
                    br(),
                    dataTableOutput("coldterms")
                    ),
+          tabPanel("Suche nach Themen", 
+                   br(),
+                   plotOutput("topicplot"),
+                   numericInput("NR",
+                                label = "Anzeige für Thema:",
+                                value = 1,
+                                min = 1,
+                                max = dim(theta_year)[2],
+                                width = 150),
+                   uiOutput("link"),
+                   br(),
+                   br(),
+                   br(),
+                   h3(strong("Liste aller Themen")),
+                   br(),
+                   br(),
+                   dataTableOutput("topiclist")
+          ),
         type = "tabs")
         
       )
@@ -104,12 +128,19 @@ server <- function(input, output) {
     input$year
   })
   
+  select <- reactive({
+    if (input$NR < 1) return(1)
+    if (input$NR > dim(theta_year)[2]) return(dim(theta_year)[2])
+    input$NR
+  })
+  
   trends <- reactive({
     trends.ab(input$range[1]-1979, input$range[2]-1979, 
               theta_year, theta_mean_by_year, theta_mean_by_year_time, theta_mean_by_year_ts, years)
   })
+
   
-  #output$value <- renderPrint({finalInput()})
+  ### plots ###
   
   output$topicchart <- renderPlot({
     barchart(head(sort(theta_year[as.character(finalInput()), ], decreasing = TRUE), 10)[10:1], 
@@ -153,11 +184,37 @@ server <- function(input, output) {
            par.settings = list(strip.background=list(col="steelblue3")))
   }, res=125)
   
-  #output$hotterms <- renderPrint({trends()[[1]]})
+  output$topicplot <- renderPlot({
+    xyplot(theta_mean_by_year_ts[,select()],
+           col = c("black"),
+           ylim = c(0,0.05),
+           ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
+           xlab = "",
+           type = c("l", "g"),
+           scales = list(x = list(alternating = FALSE), tck=c(1,0), x=list(cex=1), y=list(cex=0.6), tick.number = 10),
+           main = list(paste("Zeitlicher Verlauf von Thema", select()), cex = 1),
+           par.settings = list(strip.background=list(col="steelblue3")))
+  }, res=125, width = 600)
+  
+  
+  ### data tables ##
+  
   output$hotterms <- renderDataTable({trends()[[1]]}, 
-                                     options = list(pageLength = 10, lengthChange = FALSE, info = FALSE, paging = FALSE))
+                                     options = list(pageLength = 10, lengthChange = FALSE, 
+                                                    info = FALSE, paging = FALSE, searching = FALSE))
   output$coldterms <- renderDataTable({trends()[[2]]}, 
-                                      options = list(pageLength = 10, lengthChange = FALSE, info = FALSE, paging = FALSE))
+                                      options = list(pageLength = 10, lengthChange = FALSE, 
+                                                     info = FALSE, paging = FALSE, searching = FALSE))
+  output$topiclist <- renderDataTable({topic},
+                                      options = list(pageLength = 10))
+  
+  ### Dynamic Search in PubPsych ###
+  output$link <- renderUI({
+    a(paste("Literatur zu Thema", select(), "in PSYNDEX"), 
+      href=paste0("https://pubpsych.zpid.de/pubpsych/Search.action?search=&q=%28DFK%3D%28", 
+                  topdocs_string[[select()]],
+                  "%29%29+DB%3DPSYNDEX&inHistory=1&stats=WDH"), target="_blank")
+    })
 
 }
 
