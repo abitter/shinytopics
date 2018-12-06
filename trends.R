@@ -2,15 +2,6 @@
 ########################
 
 
-#theta_year <- theta_mean_by_year
-#theta_time <- theta_mean_by_year_time
-#theta_ts <- theta_mean_by_year_ts
-
-#saveRDS(theta_year, file = "./shinytopics/data/theta_year.rds")
-#saveRDS(theta_time, file = "./shinytopics/data/theta_time.rds")
-#saveRDS(theta_ts, file = "./shinytopics/data/theta_ts.rds")
-#saveRDS(years, file = "./shinytopics/data/years.rds")
-
 #von <- input$range[1]-1979
 #bis <- input$range[2]-1979
 

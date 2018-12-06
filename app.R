@@ -1,6 +1,6 @@
 #
-# Hot Topics Shiny App
-######################
+# Shiny Topics
+##############
 # André Bittermann, ZPID, Trier
 #
 # This app displays research topics in psychology
@@ -16,8 +16,8 @@ library(lattice)
 # data ----
 theta_year <- readRDS("data/theta_year.rds")
 theta_mean_by_year <- readRDS("data/theta_mean_by_year.rds")
-theta_mean_by_year_time <- readRDS("data/theta_time.rds")
-theta_mean_by_year_ts <- readRDS("data/theta_ts.rds")
+theta_mean_by_year_time <- readRDS("data/theta_mean_by_year_time.rds")
+theta_mean_by_year_ts <- readRDS("data/theta_mean_by_year_ts.rds")
 years <- readRDS("data/years.rds")
 
 # sources ----
@@ -28,19 +28,19 @@ source("trends.R")
 ui <- fluidPage(
    
    # Application title
-   titlePanel("Shiny Topics v0.2"),
+   titlePanel("Shiny Topics v0.2.1"),
    
    # Sidebar
    sidebarLayout(
      sidebarPanel(width = 3,
        
-       #helpText("Wählen Sie das Jahr oder den Zeitraum (1980–2016)"),
+       #helpText("Wählen Sie das Jahr oder den Zeitraum (1980–2017)"),
        
        numericInput("year", 
                     label = h4("Jahr:"),
-                    value = 2016, 
+                    value = 2017, 
                     min = 1980, 
-                    max = 2016),
+                    max = 2017),
        
        # slider color
        #tags$style(HTML(".js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #a2b21e}")),
@@ -48,8 +48,8 @@ ui <- fluidPage(
        sliderInput("range",
                     label = h4("Zeitraum:"),
                     min = 1980,
-                    max = 2016,
-                    value = c(1980, 2016),
+                    max = 2017,
+                    value = c(1980, 2017),
                     sep = "",
                     ticks = FALSE),
        
@@ -57,8 +57,12 @@ ui <- fluidPage(
                 p("Die Forschungsthemen der Psychologie aus dem deutschsprachigen Raum wurden mit Hilfe von",
                 a("Topic Modeling", href = "https://doi.org/10.1027/2151-2604/a000318", target="_blank"),
                 "identifiziert, basierend auf der Referenzdatenbank",
-                a("PSYNDEX.", href = "https://www.psyndex.de", target="_blank")
-                )),
+                a("PSYNDEX.", href = "https://www.psyndex.de", target="_blank")),
+                br(),
+                p("Die Themen basieren auf den",  em("PSYNDEX Terms,"), 
+                  "welche", a("hier", href = "https://www.psyndex.de/index.php?wahl=products&uwahl=printed&uuwahl=psyndexterms", 
+                              target="_blank"), "eingesehen werden können.")
+                ),
        
        br(),
        a(img(src = "logo.png", height = "75%", width = "75%"), href = "https://www.leibniz-psychology.org", target="_blank")      ),
@@ -96,7 +100,7 @@ server <- function(input, output) {
   # transform invalid year input
   finalInput <- reactive({
     if (input$year < 1980) return(1980)
-    if (input$year > 2016) return(2016)
+    if (input$year > 2017) return(2017)
     input$year
   })
   
@@ -127,7 +131,7 @@ server <- function(input, output) {
     xyplot(trends()[[3]],
            layout = c(5,2),
            col = c("black"),
-           ylim = c(0,0.015),
+           ylim = c(0,0.05),
            ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
            xlab = "",
            type = c("l", "g", "r"),
@@ -140,7 +144,7 @@ server <- function(input, output) {
     xyplot(trends()[[4]],
            layout = c(5,2),
            col = c("black"),
-           ylim = c(0,0.015),
+           ylim = c(0,0.05),
            ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
            xlab = "",
            type = c("l", "g", "r"),
@@ -150,8 +154,10 @@ server <- function(input, output) {
   }, res=125)
   
   #output$hotterms <- renderPrint({trends()[[1]]})
-  output$hotterms <- renderDataTable({trends()[[1]]}, options = list(pageLength = 10, lengthChange = FALSE, info = FALSE))
-  output$coldterms <- renderDataTable({trends()[[2]]}, options = list(pageLength = 10, lengthChange = FALSE, info = FALSE))
+  output$hotterms <- renderDataTable({trends()[[1]]}, 
+                                     options = list(pageLength = 10, lengthChange = FALSE, info = FALSE, paging = FALSE))
+  output$coldterms <- renderDataTable({trends()[[2]]}, 
+                                      options = list(pageLength = 10, lengthChange = FALSE, info = FALSE, paging = FALSE))
 
 }
 
