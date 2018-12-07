@@ -12,6 +12,7 @@
 # packages ----
 library(shiny)
 library(lattice)
+library(DT)
 
 # data ----
 theta_year <- readRDS("data/theta_year.rds")
@@ -35,13 +36,12 @@ createLink <- function(val) {
          val,"%29%29+DB%3DPSYNDEX&stats=TOP' target='_blank' class='btn btn-primary'>Suche in PSYNDEX</a>")
 }
 
-#
 
 # Define UI ----
 ui <- fluidPage(
    
-   # Application title
-   titlePanel("Shiny Topics v0.3.1"),
+  # Application title
+   titlePanel("Shiny Topics v0.3.3"),
    
    # Sidebar
    sidebarLayout(
@@ -66,6 +66,9 @@ ui <- fluidPage(
                     sep = "",
                     ticks = FALSE),
        
+       actionButton("reset", "Reset"),
+       br(),
+       br(),
        helpText(br(),
                 p("Die Themen der psychologischen Fachliteratur aus dem deutschsprachigen Raum wurden mit Hilfe von",
                 a("Topic Modeling", href = "https://doi.org/10.1027/2151-2604/a000318", target="_blank"),
@@ -97,31 +100,21 @@ ui <- fluidPage(
                    br(),
                    plotOutput("hot"),
                    br(),
-                   dataTableOutput("hotterms")
+                   DT::dataTableOutput("hotterms")
                    ),
           tabPanel("Cold Topics", 
                    br(),
                    plotOutput("cold"),
                    br(),
-                   dataTableOutput("coldterms")
+                   DT::dataTableOutput("coldterms")
                    ),
-          tabPanel("Suche nach Themen", 
+          tabPanel("Alle Themen", 
                    br(),
                    plotOutput("topicplot"),
-                   numericInput("NR",
-                                label = "Anzeige für Thema:",
-                                value = 1,
-                                min = 1,
-                                max = dim(theta_year)[2],
-                                width = 150),
-                   #uiOutput("link"),
+                   #h3(strong("Liste aller Themen:")),
+                   #br(),
                    br(),
-                   br(),
-                   br(),
-                   h3(strong("Liste aller Themen:")),
-                   br(),
-                   br(),
-                   dataTableOutput("topiclist")
+                   DT::dataTableOutput("topiclist")
           ),
         type = "tabs")
         
@@ -130,7 +123,13 @@ ui <- fluidPage(
 )
 
 # Define server logic ----
-server <- function(input, output) {
+server <- function(input, output, session) {
+  
+  # slider reset
+  observeEvent(input$reset,{
+    updateSliderInput(session,'range', 
+                      value = c(1980, as.numeric(years[length(years)])))
+  })
   
   # transform invalid year input
   finalInput <- reactive({
@@ -139,17 +138,21 @@ server <- function(input, output) {
     input$year
   })
   
+  # clickable selection of data table rows
   select <- reactive({
-    if (input$NR < 1) return(1)
-    if (input$NR > dim(theta_year)[2]) return(dim(theta_year)[2])
-    input$NR
+    if (is.null(input$topiclist_rows_selected) == TRUE) return(1)
+    input$topiclist_rows_selected
   })
   
+  # trends function
   trends <- reactive({
     trends.ab(input$range[1]-1979, input$range[2]-1979, 
               theta_year, theta_mean_by_year, theta_mean_by_year_time, theta_mean_by_year_ts, years, topic)
   })
 
+  ranger <- reactive({
+    paste0(input$range[1]-1979,":",input$range[2]-1979)
+  })
   
   ### plots ###
   
@@ -196,7 +199,8 @@ server <- function(input, output) {
   }, res=125)
   
   output$topicplot <- renderPlot({
-    xyplot(theta_mean_by_year_ts[,select()],
+    #xyplot(theta_mean_by_year_ts[,select()], # fixed total time interval
+    xyplot(window(theta_mean_by_year_ts, input$range[1], c(input$range[1], input$range[2]-input$range[1]+1))[,select()],
            col = c("black"),
            ylim = c(0,0.05),
            ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
@@ -210,22 +214,27 @@ server <- function(input, output) {
   
   ### data tables ##
   
-  output$hotterms <- renderDataTable({
+  output$hotterms <- DT::renderDataTable({
     table_hot <- trends()[[1]]
     table_hot$Recherche <- createLink(table_hot$Thema)
     return(table_hot)
-    }, escape = FALSE, options = list(pageLength = 10, lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
+    }, escape = FALSE, rownames = FALSE, selection = list(mode = "none"),
+    options = list(pageLength = 10, lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
   
-  output$coldterms <- renderDataTable({
+  output$coldterms <- DT::renderDataTable({
     table_cold <- trends()[[1]]
     table_cold$Recherche <- createLink(table_cold$Thema)
     return(table_cold)
-    }, escape = FALSE, options = list(pageLength = 10, lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
+    }, escape = FALSE, rownames = FALSE, selection = list(mode = "none"),
+    options = list(pageLength = 10, lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
   
-  output$topiclist <- renderDataTable({
+  output$topiclist <- DT::renderDataTable({
     topic$Recherche <- createLink(topic$Thema)
+    topic[,3] <- round(topic[,3], 4)
     return(topic)
-    }, escape = FALSE, options = list(pageLength = 10))
+    }, escape = FALSE, selection = list(mode = "single", selected = 1), rownames = FALSE,
+    options = list(pageLength = 10, sDom = '<"top">flrt<"bottom">ip', searchHighlight = TRUE))
+  
   
   ### Dynamic Search in PubPsych ###
   #output$link <- renderUI({
