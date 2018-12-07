@@ -25,6 +25,15 @@ topic <- readRDS("data/topic.rds")
 # sources ----
 source("trends.R")
 
+# Helper function ----
+# https://stackoverflow.com/questions/28117556/clickable-links-in-shiny-datatable
+createLink <- function(val) {
+  val <- gsub(", "," OR " , val)
+  paste0("<a href='https://pubpsych.zpid.de/pubpsych/Search.action?search=&q=%28CT%3D%28", 
+         val,"%29%29+DB%3DPSYNDEX&stats=TOP' target='_blank' class='btn btn-primary'>Literatur in PSYNDEX</a>")
+}
+
+#
 
 # Define UI ----
 ui <- fluidPage(
@@ -103,11 +112,11 @@ ui <- fluidPage(
                                 min = 1,
                                 max = dim(theta_year)[2],
                                 width = 150),
-                   uiOutput("link"),
+                   #uiOutput("link"),
                    br(),
                    br(),
                    br(),
-                   h3(strong("Liste aller Themen")),
+                   h3(strong("Liste aller Themen:")),
                    br(),
                    br(),
                    dataTableOutput("topiclist")
@@ -199,22 +208,30 @@ server <- function(input, output) {
   
   ### data tables ##
   
-  output$hotterms <- renderDataTable({trends()[[1]]}, 
-                                     options = list(pageLength = 10, lengthChange = FALSE, 
-                                                    info = FALSE, paging = FALSE, searching = FALSE))
-  output$coldterms <- renderDataTable({trends()[[2]]}, 
-                                      options = list(pageLength = 10, lengthChange = FALSE, 
-                                                     info = FALSE, paging = FALSE, searching = FALSE))
-  output$topiclist <- renderDataTable({topic},
-                                      options = list(pageLength = 10))
+  output$hotterms <- renderDataTable({
+    table_hot <- trends()[[1]]
+    table_hot$Recherche <- createLink(table_hot$Thema)
+    return(table_hot)
+    }, escape = FALSE, options = list(pageLength = 10, lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
+  
+  output$coldterms <- renderDataTable({
+    table_cold <- trends()[[1]]
+    table_cold$Recherche <- createLink(table_cold$Thema)
+    return(table_cold)
+    }, escape = FALSE, options = list(pageLength = 10, lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
+  
+  output$topiclist <- renderDataTable({
+    topic$Recherche <- createLink(topic$Thema)
+    return(topic)
+    }, escape = FALSE, options = list(pageLength = 10))
   
   ### Dynamic Search in PubPsych ###
-  output$link <- renderUI({
-    a(paste("Literatur zu Thema", select(), "in PSYNDEX"), 
-      href=paste0("https://pubpsych.zpid.de/pubpsych/Search.action?search=&q=%28DFK%3D%28", 
-                  topdocs_string[[select()]],
-                  "%29%29+DB%3DPSYNDEX&inHistory=1&stats=WDH"), target="_blank")
-    })
+  #output$link <- renderUI({
+  #  a(paste("Literatur zu Thema", select(), "in PSYNDEX"), 
+  #    href=paste0("https://pubpsych.zpid.de/pubpsych/Search.action?search=&q=%28DFK%3D%28", 
+  #                topdocs_string[[select()]],
+  #                "%29%29+DB%3DPSYNDEX&stats=TOP"), target="_blank")
+  #  })
 
 }
 
