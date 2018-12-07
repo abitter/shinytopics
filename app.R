@@ -19,8 +19,9 @@ theta_mean_by_year <- readRDS("data/theta_mean_by_year.rds")
 theta_mean_by_year_time <- readRDS("data/theta_mean_by_year_time.rds")
 theta_mean_by_year_ts <- readRDS("data/theta_mean_by_year_ts.rds")
 years <- readRDS("data/years.rds")
-topdocs_string <- readRDS("data/topdocs_string.rds")
 topic <- readRDS("data/topic.rds")
+#topdocs_string <- readRDS("data/topdocs_string.rds")
+
 
 # sources ----
 source("trends.R")
@@ -28,9 +29,10 @@ source("trends.R")
 # Helper function ----
 # https://stackoverflow.com/questions/28117556/clickable-links-in-shiny-datatable
 createLink <- function(val) {
-  val <- gsub(", "," OR " , val)
+  val <- gsub(', ','" OR "' , val)
+  val <- paste0('"', val, '"')
   paste0("<a href='https://pubpsych.zpid.de/pubpsych/Search.action?search=&q=%28CT%3D%28", 
-         val,"%29%29+DB%3DPSYNDEX&stats=TOP' target='_blank' class='btn btn-primary'>Literatur in PSYNDEX</a>")
+         val,"%29%29+DB%3DPSYNDEX&stats=TOP' target='_blank' class='btn btn-primary'>Suche in PSYNDEX</a>")
 }
 
 #
@@ -39,7 +41,7 @@ createLink <- function(val) {
 ui <- fluidPage(
    
    # Application title
-   titlePanel("Shiny Topics v0.3"),
+   titlePanel("Shiny Topics v0.3.1"),
    
    # Sidebar
    sidebarLayout(
