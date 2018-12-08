@@ -46,9 +46,7 @@ ui <- fluidPage(
    # Sidebar
    sidebarLayout(
      sidebarPanel(width = 3,
-       
-       #helpText("Wählen Sie das Jahr oder den Zeitraum (1980–2017)"),
-       
+                     
        numericInput("year", 
                     label = h4("Jahr:"),
                     value = as.numeric(years[length(years)]), 
@@ -150,9 +148,6 @@ server <- function(input, output, session) {
               theta_year, theta_mean_by_year, theta_mean_by_year_time, theta_mean_by_year_ts, years, topic)
   })
 
-  ranger <- reactive({
-    paste0(input$range[1]-1979,":",input$range[2]-1979)
-  })
   
   ### plots ###
   
@@ -222,7 +217,7 @@ server <- function(input, output, session) {
     options = list(pageLength = 10, lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
   
   output$coldterms <- DT::renderDataTable({
-    table_cold <- trends()[[1]]
+    table_cold <- trends()[[2]]
     table_cold$Recherche <- createLink(table_cold$Thema)
     return(table_cold)
     }, escape = FALSE, rownames = FALSE, selection = list(mode = "none"),
