@@ -1,7 +1,7 @@
 # Trends for range input
 ########################
 
-# original code: https://github.com/mponweiser/LDA-snippets/blob/master/stefano-prova.r
+# original code: https://github.com/mponweiser/thesis-LDA-in-R
 
 #von <- input$range[1]-1979
 #bis <- input$range[2]-1979
