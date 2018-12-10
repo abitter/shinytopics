@@ -26,18 +26,10 @@ trends.ab <- function(von, bis,
   theta_mean_lm_coef_slope_pos <- theta_mean_lm_coef_slope[theta_mean_lm_coef_slope >= 0]
   theta_mean_lm_coef_slope_neg <- theta_mean_lm_coef_slope[theta_mean_lm_coef_slope < 0]
   
-  # table of topics with positive and negative trends by level of significance
-  p_level <- c(0.05, 0.01, 0.001, 0.0001)
-  significance_total <- sapply(p_level, 
-                               function(x) (theta_mean_lm_coef_sign[theta_mean_lm_coef_sign < x]))
-  significance_neg <- sapply(1:length(p_level),
-                             function(x) intersect(names(theta_mean_lm_coef_slope_neg),names(significance_total[[x]])))
-  significance_pos <- sapply(1:length(p_level),
-                             function(x) intersect(names(theta_mean_lm_coef_slope_pos),names(significance_total[[x]])))
   
   ### hot & cold
-  topics_hot <- as.numeric(names(sort(theta_mean_lm_coef_slope[significance_pos[[1]]], decreasing=TRUE)))
-  topics_cold <- as.numeric(names(sort(theta_mean_lm_coef_slope[significance_neg[[1]]], decreasing=FALSE)))
+  topics_hot <- as.numeric(names(sort(theta_mean_lm_coef_slope_pos, decreasing=TRUE)))
+  topics_cold <- as.numeric(names(sort(theta_mean_lm_coef_slope_neg, decreasing=FALSE)))
   
   hot_ts <- ts(theta_mean_by_year_ts[von:bis,topics_hot[1:10]], start = as.integer(years[von]))
   cold_ts <- ts(theta_mean_by_year_ts[von:bis,topics_cold[1:10]], start = as.integer(years[von]))

@@ -10,9 +10,12 @@
 
 
 # packages ----
-library(shiny)
-library(lattice)
-library(DT)
+#library(shiny)
+#library(lattice)
+#library(DT)
+suppressPackageStartupMessages( if (!require("pacman")) install.packages("pacman") )
+pacman::p_load(shiny, lattice, DT)
+
 
 # data ----
 theta_year <- readRDS("data/theta_year.rds")
@@ -22,7 +25,6 @@ theta_mean_by_year_ts <- readRDS("data/theta_mean_by_year_ts.rds")
 years <- readRDS("data/years.rds")
 topic <- readRDS("data/topic.rds")
 #topdocs_string <- readRDS("data/topdocs_string.rds")
-
 
 # sources ----
 source("trends.R")
@@ -39,9 +41,15 @@ createLink <- function(val) {
 
 # Define UI ----
 ui <- fluidPage(
-   
+  
+  # color of selected row; https://www.w3schools.com/colors/colors_names.asp
+  tags$style(HTML('table.dataTable tbody tr.selected td, table.dataTable td.selected{background-color:gold !important;}')),
+  
+  # color of clear search button
+  #tags$style(HTML('#reset2{background-color:lightgrey}')),
+  
   # Application title
-   titlePanel("Shiny Topics v0.3.3"),
+   titlePanel("Shiny Topics v0.3.4"),
    
    # Sidebar
    sidebarLayout(
@@ -109,9 +117,8 @@ ui <- fluidPage(
           tabPanel("Alle Themen", 
                    br(),
                    plotOutput("topicplot"),
-                   #h3(strong("Liste aller Themen:")),
+                   p(actionButton("reset2", strong("Suche löschen")), align = "right"),
                    #br(),
-                   br(),
                    DT::dataTableOutput("topiclist")
           ),
         type = "tabs")
@@ -123,10 +130,15 @@ ui <- fluidPage(
 # Define server logic ----
 server <- function(input, output, session) {
   
+  # reset buttons
   # slider reset
   observeEvent(input$reset,{
     updateSliderInput(session,'range', 
                       value = c(1980, as.numeric(years[length(years)])))
+  })
+  # search reset
+  observeEvent(input$reset2,{
+    clearSearch(proxy)
   })
   
   # transform invalid year input
@@ -138,9 +150,18 @@ server <- function(input, output, session) {
   
   # clickable selection of data table rows
   select <- reactive({
-    if (is.null(input$topiclist_rows_selected) == TRUE) return(1)
+    if (is.null(input$topiclist_rows_selected) == TRUE) return(1) # show plot for Topic 1 in case no row is selected
     input$topiclist_rows_selected
   })
+  select_hot <- reactive({
+    if (is.null(input$hotterms_rows_selected) == TRUE) return(0) # 0, so no plot is highlighted when row in data table is unselected
+    input$hotterms_rows_selected
+  })
+  select_cold <- reactive({
+    if (is.null(input$coldterms_rows_selected) == TRUE) return(0)
+    input$coldterms_rows_selected
+  })
+ 
   
   # trends function
   trends <- reactive({
@@ -167,40 +188,54 @@ server <- function(input, output, session) {
              scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.1))) # label font size
   })
   
+  # background of xyplots headers
+  colors <- rep("steelblue3", 10)
+  
   output$hot <- renderPlot({
+    colors[select_hot()] <- "gold"
     xyplot(trends()[[3]],
            layout = c(5,2),
            col = c("black"),
            ylim = c(0,0.05),
            ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
            xlab = "",
-           type = c("l", "g", "r"),
+           type = c("l", "g"),
            scales = list(x = list(alternating = FALSE), tck=c(1,0), x=list(cex=1), y=list(cex=0.6)),
            main = list(paste0("Hot Topics für den Zeitraum ", input$range[1], "–", input$range[2]), cex = 1),
-           par.settings = list(strip.background = list(col="steelblue3")))
+           par.settings = list(strip.background=list(col=colors)),
+           strip = function(..., bg) { # http://r.789695.n4.nabble.com/lattice-change-background-strip-color-in-one-panel-td3554612.html
+             strip.default(..., 
+                           bg = trellis.par.get("strip.background")$col[which.packet()]
+                           )}) 
   }, res=125)
   
   output$cold <- renderPlot({
+    colors[select_cold()] <- "gold"
     xyplot(trends()[[4]],
            layout = c(5,2),
            col = c("black"),
            ylim = c(0,0.05),
            ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
            xlab = "",
-           type = c("l", "g", "r"),
+           type = c("l", "g"),
            scales = list(x = list(alternating = FALSE), tck=c(1,0), x=list(cex=1), y=list(cex=0.6)),
            main = list(paste0("Cold Topics für den Zeitraum ", input$range[1], "–", input$range[2]), cex = 1),
-           par.settings = list(strip.background=list(col="steelblue3")))
+           par.settings = list(strip.background=list(col=colors)),
+           strip = function(..., bg) {
+             strip.default(...,
+                           bg = trellis.par.get("strip.background")$col[which.packet()]
+                           )}) 
   }, res=125)
   
   output$topicplot <- renderPlot({
     #xyplot(theta_mean_by_year_ts[,select()], # fixed total time interval
     xyplot(window(theta_mean_by_year_ts, input$range[1], c(input$range[1], input$range[2]-input$range[1]+1))[,select()],
-           col = c("black"),
+           col = "black",
            ylim = c(0,0.05),
            ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
            xlab = "",
            type = c("l", "g"),
+           #lwd = 2,
            scales = list(x = list(alternating = FALSE), tck=c(1,0), x=list(cex=1), y=list(cex=0.6), tick.number = 10),
            main = list(paste("Zeitlicher Verlauf von Thema", select()), cex = 1),
            par.settings = list(strip.background=list(col="steelblue3")))
@@ -209,26 +244,31 @@ server <- function(input, output, session) {
   
   ### data tables ##
   
+  # options applied to all data tables
+  options(DT.options = list(pageLength = 10, language = list(url = '//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/German.json')))
+  
   output$hotterms <- DT::renderDataTable({
     table_hot <- trends()[[1]]
     table_hot$Recherche <- createLink(table_hot$Thema)
     return(table_hot)
-    }, escape = FALSE, rownames = FALSE, selection = list(mode = "none"),
-    options = list(pageLength = 10, lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
+    }, escape = FALSE, rownames = FALSE, selection = list(mode = "single"),
+    options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
   
   output$coldterms <- DT::renderDataTable({
     table_cold <- trends()[[2]]
     table_cold$Recherche <- createLink(table_cold$Thema)
     return(table_cold)
-    }, escape = FALSE, rownames = FALSE, selection = list(mode = "none"),
-    options = list(pageLength = 10, lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
+    }, escape = FALSE, rownames = FALSE, selection = list(mode = "single"),
+    options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
   
   output$topiclist <- DT::renderDataTable({
     topic$Recherche <- createLink(topic$Thema)
     topic[,3] <- round(topic[,3], 4)
     return(topic)
     }, escape = FALSE, selection = list(mode = "single", selected = 1), rownames = FALSE,
-    options = list(pageLength = 10, sDom = '<"top">flrt<"bottom">ip', searchHighlight = TRUE))
+    options = list(sDom = '<"top">flrt<"bottom">ip', searchHighlight = TRUE))
+  # for clear search button:
+  proxy <- dataTableProxy("topiclist")
   
   
   ### Dynamic Search in PubPsych ###
@@ -240,6 +280,7 @@ server <- function(input, output, session) {
   #  })
 
 }
+
 
 # Run the application ----
 shinyApp(ui = ui, server = server)
