@@ -49,13 +49,13 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("Shiny Topics v0.3.4"),
+   titlePanel("Shiny Topics v0.4"),
    
    # Sidebar
    sidebarLayout(
      sidebarPanel(width = 3,
                      
-       numericInput("year", 
+       numericInput("year", #width = "50%",
                     label = h4("Jahr:"),
                     value = as.numeric(years[length(years)]), 
                     min = 1980, 
@@ -96,12 +96,22 @@ ui <- fluidPage(
       # Main Panel
       mainPanel(width = 9,
         tabsetPanel(
-          tabPanel("Themen der Jahre", 
+          tabPanel("Themen eines Jahres", 
                    br(),
                    plotOutput("topicchart"),
                    br(),
-                   plotOutput("topicchart2")
+                   br(),
+                   DT::dataTableOutput("popular"),
+                   br()
                    ), 
+          tabPanel("Themen eines Zeitraums", 
+                   br(),
+                   plotOutput("topicchart2"),
+                   br(),
+                   br(),
+                   DT::dataTableOutput("popularrange"),
+                   br()
+          ),
           tabPanel("Hot Topics", 
                    br(),
                    plotOutput("hot"),
@@ -153,8 +163,16 @@ server <- function(input, output, session) {
     if (is.null(input$topiclist_rows_selected) == TRUE) return(1) # show plot for Topic 1 in case no row is selected
     input$topiclist_rows_selected
   })
+  select_popular <- reactive({
+    if (is.null(input$popular_rows_selected) == TRUE) return(0) # 0, so no plot is highlighted when row in data table is unselected
+    input$popular_rows_selected
+  })
+  select_popular_range <- reactive({
+    if (is.null(input$popularrange_rows_selected) == TRUE) return(0)
+    input$popularrange_rows_selected
+  })
   select_hot <- reactive({
-    if (is.null(input$hotterms_rows_selected) == TRUE) return(0) # 0, so no plot is highlighted when row in data table is unselected
+    if (is.null(input$hotterms_rows_selected) == TRUE) return(0)
     input$hotterms_rows_selected
   })
   select_cold <- reactive({
@@ -172,24 +190,28 @@ server <- function(input, output, session) {
   
   ### plots ###
   
+  # default color for barchart and background of xyplots headers
+  colors <- rep("steelblue3", 10)
+  
   output$topicchart <- renderPlot({
-    barchart(head(sort(theta_year[as.character(finalInput()), ], decreasing = TRUE), 10)[10:1], 
-             col = "steelblue3", 
-             main = list(paste("Populäre Forschungsthemen im Jahr", finalInput()), cex = 1.75),
-             xlab = "Mittlere Dokument-Topic-Wahrscheinlichkeit",
-             scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.1))) # label font size
+    colors[(11-select_popular())] <- "gold"
+    barchart(head(sort(theta_mean_by_year[as.character(finalInput()), ], decreasing = TRUE), 10)[10:1], 
+             col = colors, 
+             main = list(paste("Populäre Themen im Jahr", finalInput()), cex = 1.75),
+             #xlab = "Mittlere Dokument-Topic-Wahrscheinlichkeit",
+             xlab = "Prävalenz",
+             scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.5))) # label font size
   })
   
   output$topicchart2 <- renderPlot({
-    barchart(head(sort(colMeans(theta_year[(input$range[1]-1979):(input$range[2]-1979), ]), decreasing = TRUE), 10)[10:1],
-             col = "steelblue3", 
-             main = list(paste0("Populäre Forschungsthemen im Zeitraum ", input$range[1], "–", input$range[2]), cex = 1.75),
-             xlab = "Mittlere Dokument-Topic-Wahrscheinlichkeit",
-             scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.1))) # label font size
+    colors[(11-select_popular_range())] <- "gold"
+    barchart(head(sort(colMeans(theta_mean_by_year[(input$range[1]-1979):(input$range[2]-1979), ]), decreasing = TRUE), 10)[10:1],
+             col = colors, 
+             main = list(paste0("Populäre Themen im Zeitraum ", input$range[1], "–", input$range[2]), cex = 1.75),
+             #xlab = "Mittlere Dokument-Topic-Wahrscheinlichkeit",
+             xlab = "Prävalenz",
+             scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.5))) # label font size
   })
-  
-  # background of xyplots headers
-  colors <- rep("steelblue3", 10)
   
   output$hot <- renderPlot({
     colors[select_hot()] <- "gold"
@@ -197,12 +219,13 @@ server <- function(input, output, session) {
            layout = c(5,2),
            col = c("black"),
            ylim = c(0,0.05),
-           ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
+           #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex = 0.6),
+           ylab = list("Prävalenz", cex = 0.6),
            xlab = "",
            type = c("l", "g"),
-           scales = list(x = list(alternating = FALSE), tck=c(1,0), x=list(cex=1), y=list(cex=0.6)),
+           scales = list(x = list(alternating = FALSE), tck = c(1,0), y = list(cex = 0.6)),
            main = list(paste0("Hot Topics für den Zeitraum ", input$range[1], "–", input$range[2]), cex = 1),
-           par.settings = list(strip.background=list(col=colors)),
+           par.settings = list(strip.background = list(col = colors)),
            strip = function(..., bg) { # http://r.789695.n4.nabble.com/lattice-change-background-strip-color-in-one-panel-td3554612.html
              strip.default(..., 
                            bg = trellis.par.get("strip.background")$col[which.packet()]
@@ -211,16 +234,18 @@ server <- function(input, output, session) {
   
   output$cold <- renderPlot({
     colors[select_cold()] <- "gold"
+    #ticks <- ifelse((input$range[2]-input$range[1])<3, 1, 6)
     xyplot(trends()[[4]],
            layout = c(5,2),
            col = c("black"),
            ylim = c(0,0.05),
-           ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
+           #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex = 0.6),
+           ylab = list("Prävalenz", cex = 0.6),
            xlab = "",
            type = c("l", "g"),
-           scales = list(x = list(alternating = FALSE), tck=c(1,0), x=list(cex=1), y=list(cex=0.6)),
+           scales = list(x = list(alternating = FALSE), tck = c(1,0), y = list(cex = 0.6)),
            main = list(paste0("Cold Topics für den Zeitraum ", input$range[1], "–", input$range[2]), cex = 1),
-           par.settings = list(strip.background=list(col=colors)),
+           par.settings = list(strip.background = list(col = colors)),
            strip = function(..., bg) {
              strip.default(...,
                            bg = trellis.par.get("strip.background")$col[which.packet()]
@@ -230,15 +255,16 @@ server <- function(input, output, session) {
   output$topicplot <- renderPlot({
     #xyplot(theta_mean_by_year_ts[,select()], # fixed total time interval
     xyplot(window(theta_mean_by_year_ts, input$range[1], c(input$range[1], input$range[2]-input$range[1]+1))[,select()],
-           col = "black",
+           col = "steelblue3",
            ylim = c(0,0.05),
-           ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
+           #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
+           ylab = list("Prävalenz", cex=0.6),
            xlab = "",
            type = c("l", "g"),
-           #lwd = 2,
-           scales = list(x = list(alternating = FALSE), tck=c(1,0), x=list(cex=1), y=list(cex=0.6), tick.number = 10),
+           lwd = 3,
+           scales = list(x = list(alternating = FALSE), tck = c(1,0), y = list(cex = 0.6), tick.number = 10),
            main = list(paste("Zeitlicher Verlauf von Thema", select()), cex = 1),
-           par.settings = list(strip.background=list(col="steelblue3")))
+           par.settings = list(strip.background = list(col = "steelblue3")))
   }, res=125, width = 600)
   
   
@@ -247,20 +273,53 @@ server <- function(input, output, session) {
   # options applied to all data tables
   options(DT.options = list(pageLength = 10, language = list(url = '//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/German.json')))
   
+  # popular by year #
+  output$popular <- DT::renderDataTable({
+    table_popular <- as.data.frame(head(sort(theta_year[as.character(finalInput()), ], decreasing = TRUE), 10)[1:10])
+    table_popular$Thema <- rownames(table_popular)
+    table_popular$Rang <- 1:10
+    table_popular$NR <- as.numeric(names(head(sort(theta_mean_by_year[as.character(finalInput()), ], decreasing = TRUE), 10)[1:10]))
+    rownames(table_popular) <- NULL
+    table_popular[ ,c(1,2,3,4)] <- table_popular[ ,c(3,4,2,1)]
+    names(table_popular) <- c("Rang", "NR", "Thema", "Prävalenz")
+    table_popular[,4] <- round(table_popular[,4], 4)
+    table_popular$Recherche <- createLink(table_popular$Thema)
+    return(table_popular)
+  }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1),
+  options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
+  
+  # popular in range of years #
+  output$popularrange <- DT::renderDataTable({
+    table_popular_range <- as.data.frame(head(sort(colMeans(theta_year[(input$range[1]-1979):(input$range[2]-1979), ]), decreasing = TRUE), 10)[1:10])
+    table_popular_range$Thema <- rownames(table_popular_range)
+    table_popular_range$Rang <- 1:10
+    table_popular_range$NR <- as.numeric(names(head(sort(colMeans(theta_mean_by_year[(input$range[1]-1979):(input$range[2]-1979), ]), decreasing = TRUE), 10)[1:10]))
+    rownames(table_popular_range) <- NULL
+    table_popular_range[ ,c(1,2,3,4)] <- table_popular_range[ ,c(3,4,2,1)]
+    names(table_popular_range) <- c("Rang", "NR", "Thema", "Prävalenz")
+    table_popular_range[,4] <- round(table_popular_range[,4], 4) 
+    table_popular_range$Recherche <- createLink(table_popular_range$Thema)
+    return(table_popular_range)
+  }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1),
+  options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
+  
+  # hot topics #
   output$hotterms <- DT::renderDataTable({
     table_hot <- trends()[[1]]
     table_hot$Recherche <- createLink(table_hot$Thema)
     return(table_hot)
-    }, escape = FALSE, rownames = FALSE, selection = list(mode = "single"),
+    }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1),
     options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
   
+  # cold topic #
   output$coldterms <- DT::renderDataTable({
     table_cold <- trends()[[2]]
     table_cold$Recherche <- createLink(table_cold$Thema)
     return(table_cold)
-    }, escape = FALSE, rownames = FALSE, selection = list(mode = "single"),
+    }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1),
     options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
   
+  # all topics #
   output$topiclist <- DT::renderDataTable({
     topic$Recherche <- createLink(topic$Thema)
     topic[,3] <- round(topic[,3], 4)
