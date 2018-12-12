@@ -100,14 +100,12 @@ ui <- fluidPage(
                    br(),
                    plotOutput("topicchart"),
                    br(),
-                   br(),
                    DT::dataTableOutput("popular"),
                    br()
                    ), 
           tabPanel("Themen eines Zeitraums", 
                    br(),
                    plotOutput("topicchart2"),
-                   br(),
                    br(),
                    DT::dataTableOutput("popularrange"),
                    br()
@@ -128,7 +126,6 @@ ui <- fluidPage(
                    br(),
                    plotOutput("topicplot"),
                    p(actionButton("reset2", strong("Suche löschen")), align = "right"),
-                   #br(),
                    DT::dataTableOutput("topiclist")
           ),
         type = "tabs")
@@ -262,7 +259,7 @@ server <- function(input, output, session) {
            xlab = "",
            type = c("l", "g"),
            lwd = 3,
-           scales = list(x = list(alternating = FALSE), tck = c(1,0), y = list(cex = 0.6), tick.number = 10),
+           scales = list(x = list(alternating = FALSE), tck = c(1,0), y = list(cex = 0.6)),
            main = list(paste("Zeitlicher Verlauf von Thema", select()), cex = 1),
            par.settings = list(strip.background = list(col = "steelblue3")))
   }, res=125, width = 600)
@@ -281,11 +278,11 @@ server <- function(input, output, session) {
     table_popular$NR <- as.numeric(names(head(sort(theta_mean_by_year[as.character(finalInput()), ], decreasing = TRUE), 10)[1:10]))
     rownames(table_popular) <- NULL
     table_popular[ ,c(1,2,3,4)] <- table_popular[ ,c(3,4,2,1)]
-    names(table_popular) <- c("Rang", "NR", "Thema", "Prävalenz")
+    names(table_popular) <- c("Rang", "Nr.", "Thema", "Prävalenz")
     table_popular[,4] <- round(table_popular[,4], 4)
     table_popular$Recherche <- createLink(table_popular$Thema)
     return(table_popular)
-  }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1),
+  }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
   options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
   
   # popular in range of years #
@@ -296,35 +293,38 @@ server <- function(input, output, session) {
     table_popular_range$NR <- as.numeric(names(head(sort(colMeans(theta_mean_by_year[(input$range[1]-1979):(input$range[2]-1979), ]), decreasing = TRUE), 10)[1:10]))
     rownames(table_popular_range) <- NULL
     table_popular_range[ ,c(1,2,3,4)] <- table_popular_range[ ,c(3,4,2,1)]
-    names(table_popular_range) <- c("Rang", "NR", "Thema", "Prävalenz")
+    names(table_popular_range) <- c("Rang", "Nr.", "Thema", "Prävalenz")
     table_popular_range[,4] <- round(table_popular_range[,4], 4) 
     table_popular_range$Recherche <- createLink(table_popular_range$Thema)
     return(table_popular_range)
-  }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1),
+  }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
   options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
   
   # hot topics #
   output$hotterms <- DT::renderDataTable({
     table_hot <- trends()[[1]]
     table_hot$Recherche <- createLink(table_hot$Thema)
+    names(table_hot)[2] <- ("Nr.")
     return(table_hot)
-    }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1),
+    }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
     options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
   
   # cold topic #
   output$coldterms <- DT::renderDataTable({
     table_cold <- trends()[[2]]
     table_cold$Recherche <- createLink(table_cold$Thema)
+    names(table_cold)[2] <- ("Nr.")
     return(table_cold)
-    }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1),
+    }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
     options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
   
   # all topics #
   output$topiclist <- DT::renderDataTable({
     topic$Recherche <- createLink(topic$Thema)
     topic[,3] <- round(topic[,3], 4)
+    names(topic)[1] <- ("Nr.")
     return(topic)
-    }, escape = FALSE, selection = list(mode = "single", selected = 1), rownames = FALSE,
+    }, escape = FALSE, selection = list(mode = "single", selected = 1), rownames = FALSE, class = 'stripe',
     options = list(sDom = '<"top">flrt<"bottom">ip', searchHighlight = TRUE))
   # for clear search button:
   proxy <- dataTableProxy("topiclist")
