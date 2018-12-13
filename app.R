@@ -32,6 +32,21 @@ source("trends.R")
 # Helper function ----
 # https://stackoverflow.com/questions/28117556/clickable-links-in-shiny-datatable
 createLink <- function(val) {
+  val <- unlist(strsplit(val, ", ", fixed = TRUE))
+  val[1] <- paste0("'", val[1], "'^10")
+  val[2] <- paste0("'", val[2], "'^2")
+  val[3] <- paste0("'", val[3], "'")
+  val[4] <- paste0("'", val[4], "'")
+  val[5] <- paste0("'", val[5], "'")
+  val <- paste0(val, collapse=" OR ")
+  val <- gsub("'",'"',val, fixed=TRUE)
+  paste0("<a href='https://pubpsych.zpid.de/pubpsych/Search.action?search=&q=%28CT%3D%28", 
+         val,"%29%29+DB%3DPSYNDEX&stats=TOP' target='_blank' class='btn btn-primary'>Suche in PSYNDEX</a>")
+}
+
+                               
+                               
+                               createLink2 <- function(val) {
   val <- gsub(', ','" OR "' , val)
   val <- paste0('"', val, '"')
   paste0("<a href='https://pubpsych.zpid.de/pubpsych/Search.action?search=&q=%28CT%3D%28", 
