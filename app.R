@@ -28,15 +28,8 @@ topic <- readRDS("data/topic.rds")
 
 # sources ----
 source("trends.R")
+source("links.R")
 
-# Helper function ----
-# https://stackoverflow.com/questions/28117556/clickable-links-in-shiny-datatable
-createLink <- function(val) {
-  val <- gsub(', ','" OR "' , val)
-  val <- paste0('"', val, '"')
-  paste0("<a href='https://pubpsych.zpid.de/pubpsych/Search.action?search=&q=%28CT%3D%28", 
-         val,"%29%29+DB%3DPSYNDEX&stats=TOP' target='_blank' class='btn btn-primary'>Suche in PSYNDEX</a>")
-}
 
 
 # Define UI ----
@@ -49,7 +42,7 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("Shiny Topics v0.4"),
+   titlePanel("Shiny Topics v0.4.1"),
    
    # Sidebar
    sidebarLayout(
