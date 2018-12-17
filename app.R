@@ -10,11 +10,8 @@
 
 
 # packages ----
-#library(shiny)
-#library(lattice)
-#library(DT)
 suppressPackageStartupMessages( if (!require("pacman")) install.packages("pacman") )
-pacman::p_load(shiny, lattice, DT)
+pacman::p_load(shiny, lattice, DT, plotrix)
 
 
 # data ----
@@ -26,10 +23,10 @@ years <- readRDS("data/years.rds")
 topic <- readRDS("data/topic.rds")
 #topdocs_string <- readRDS("data/topdocs_string.rds")
 
+
 # sources ----
 source("trends.R")
 source("links.R")
-
 
 
 # Define UI ----
@@ -38,11 +35,15 @@ ui <- fluidPage(
   # color of selected row; https://www.w3schools.com/colors/colors_names.asp
   tags$style(HTML('table.dataTable tbody tr.selected td, table.dataTable td.selected{background-color:gold !important;}')),
   
+  # move position of output objects
+  #tags$style(type='text/css', "#circleplot { width:100%; margin-top: 0px;}"),
+  tags$style(type='text/css', "#circleplot { width:100%; margin-top: 0px;}"),
+  
   # color of clear search button
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("Shiny Topics v0.4.1"),
+   titlePanel("Shiny Topics v0.4.2"),
    
    # Sidebar
    sidebarLayout(
@@ -116,8 +117,14 @@ ui <- fluidPage(
                    DT::dataTableOutput("coldterms")
                    ),
           tabPanel("Alle Themen", 
-                   br(),
-                   plotOutput("topicplot"),
+                   column(6, 
+                          br(),
+                          plotOutput("topicplot")),
+                   column(6,
+                          #br(),
+                          plotOutput("circleplot")),
+                   #br(),
+                   #plotOutput("topicplot"),
                    p(actionButton("reset2", strong("Suche löschen")), align = "right"),
                    DT::dataTableOutput("topiclist")
           ),
@@ -255,7 +262,23 @@ server <- function(input, output, session) {
            scales = list(x = list(alternating = FALSE), tck = c(1,0), y = list(cex = 0.6)),
            main = list(paste("Zeitlicher Verlauf von Thema", select()), cex = 1),
            par.settings = list(strip.background = list(col = "steelblue3")))
-  }, res=125, width = 600)
+  }, res=125)
+  
+  output$circleplot <- renderPlot({
+    plot(1, xlab="", ylab="", xaxt='n', yaxt='n', asp = 1, xlim = c(0.6, 1.4), ylim = c(0.6, 1.4),
+         main = list(paste0("Prävalenz von Thema ", select(), ": ", round(topic[select(),3], 4)), par(cex.main = 1)),
+         type="n")
+    plotrix::draw.circle(1, 1, topic[select(),3]*10, col="gold", border="gold") # current topic
+    plotrix::draw.circle(1, 1, (1/(dim(topic)[1]))*10, border="steelblue3", col="white", lty="solid", density=0) # average
+    plotrix::draw.circle(1, 1, max(topic[,3])*10, border="black", col="white", lty="dashed", density=0) # max
+    #plotrix::draw.circle(1, 1, min(topic[,3])*10, border="black", col="white", lty="solid", density=0) # min
+    legend("bottomright",
+           legend=c("Maximum", "Durchschnitt"), 
+           col=c("black", "steelblue3"), 
+           lty=c("dashed", "solid"), 
+           cex=0.6)
+    
+  }, res=125)
   
   
   ### data tables ##
