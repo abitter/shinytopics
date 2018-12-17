@@ -266,8 +266,8 @@ server <- function(input, output, session) {
   
   output$circleplot <- renderPlot({
     plot(1, xlab="", ylab="", xaxt='n', yaxt='n', asp = 1, xlim = c(0.6, 1.4), ylim = c(0.6, 1.4),
-         main = list(paste0("Prävalenz von Thema ", select(), ": ", round(topic[select(),3], 4)), par(cex.main = 1)),
-         type="n")
+         main = list(paste0("Prävalenz von Thema ", select(), " im Vegleich")#": ", round(topic[select(),3], 4)), 
+                     par(cex.main = 1)), type="n")
     plotrix::draw.circle(1, 1, topic[select(),3]*10, col="gold", border="gold") # current topic
     plotrix::draw.circle(1, 1, (1/(dim(topic)[1]))*10, border="steelblue3", col="white", lty="solid", density=0) # average
     plotrix::draw.circle(1, 1, max(topic[,3])*10, border="black", col="white", lty="dashed", density=0) # max
