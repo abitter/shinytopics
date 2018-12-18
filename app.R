@@ -43,23 +43,23 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("Shiny Topics v0.4.3"),
+   titlePanel("Shiny Topics v0.5"),
    
    # Sidebar
    sidebarLayout(
      sidebarPanel(width = 3,
                      
-       numericInput("year", #width = "50%",
-                    label = h4("Jahr:"),
-                    value = as.numeric(years[length(years)]), 
-                    min = 1980, 
-                    max = as.numeric(years[length(years)])),
+       #numericInput("year", #width = "50%",
+        #            label = h4("Jahr:"),
+         #           value = as.numeric(years[length(years)]), 
+          #          min = 1980, 
+           #         max = as.numeric(years[length(years)])),
        
        # slider color
        #tags$style(HTML(".js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #a2b21e}")),
        
        sliderInput("range",
-                    label = h4("Zeitraum:"),
+                    label = h4("Zeit:"),
                     min = 1980,
                     max = as.numeric(years[length(years)]),
                     value = c(1980, as.numeric(years[length(years)])),
@@ -146,11 +146,11 @@ server <- function(input, output, session) {
   })
   
   # transform invalid year input
-  finalInput <- reactive({
-    if (input$year < 1980) return(1980)
-    if (input$year > 2017) return(2017)
-    input$year
-  })
+  #finalInput <- reactive({
+  #  if (input$year < 1980) return(1980)
+  #  if (input$year > 2017) return(2017)
+  #  input$year
+  #})
   
   # clickable selection of data table rows
   select <- reactive({
@@ -189,9 +189,10 @@ server <- function(input, output, session) {
   
   output$topicchart <- renderPlot({
     colors[(11-select_popular())] <- "gold"
-    barchart(head(sort(theta_mean_by_year[as.character(finalInput()), ], decreasing = TRUE), 10)[10:1], 
+    #barchart(head(sort(theta_mean_by_year[as.character(finalInput()), ], decreasing = TRUE), 10)[10:1],
+    barchart(head(sort(theta_mean_by_year[as.character(input$range[2]), ], decreasing = TRUE), 10)[10:1], 
              col = colors, 
-             main = list(paste("Populäre Themen im Jahr", finalInput()), cex = 1.75),
+             main = list(paste("Populäre Themen im Jahr", input$range[2]), cex = 1.75),
              #xlab = "Mittlere Dokument-Topic-Wahrscheinlichkeit",
              xlab = "Prävalenz",
              scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.5))) # label font size
@@ -283,10 +284,10 @@ server <- function(input, output, session) {
   
   # popular by year #
   output$popular <- DT::renderDataTable({
-    table_popular <- as.data.frame(head(sort(theta_year[as.character(finalInput()), ], decreasing = TRUE), 10)[1:10])
+    table_popular <- as.data.frame(head(sort(theta_year[as.character(input$range[2]), ], decreasing = TRUE), 10)[1:10])
     table_popular$Thema <- rownames(table_popular)
     table_popular$Rang <- 1:10
-    table_popular$NR <- as.numeric(names(head(sort(theta_mean_by_year[as.character(finalInput()), ], decreasing = TRUE), 10)[1:10]))
+    table_popular$NR <- as.numeric(names(head(sort(theta_mean_by_year[as.character(input$range[2]), ], decreasing = TRUE), 10)[1:10]))
     rownames(table_popular) <- NULL
     table_popular[ ,c(1,2,3,4)] <- table_popular[ ,c(3,4,2,1)]
     names(table_popular) <- c("Rang", "Nr.", "Thema", "Prävalenz")
