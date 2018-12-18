@@ -21,6 +21,7 @@ theta_mean_by_year_time <- readRDS("data/theta_mean_by_year_time.rds")
 theta_mean_by_year_ts <- readRDS("data/theta_mean_by_year_ts.rds")
 years <- readRDS("data/years.rds")
 topic <- readRDS("data/topic.rds")
+booster <- readRDS("data/booster.rds")
 #topdocs_string <- readRDS("data/topdocs_string.rds")
 
 
