@@ -36,14 +36,13 @@ ui <- fluidPage(
   tags$style(HTML('table.dataTable tbody tr.selected td, table.dataTable td.selected{background-color:gold !important;}')),
   
   # move position of output objects
-  #tags$style(type='text/css', "#circleplot { width:100%; margin-top: 0px;}"),
-  tags$style(type='text/css', "#circleplot { width:100%; margin-top: 0px;}"),
+  #tags$style(type='text/css', "#circleplot { width:100%; margin-top: 15px;}"),
   
   # color of clear search button
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("Shiny Topics v0.4.2"),
+   titlePanel("Shiny Topics v0.4.3"),
    
    # Sidebar
    sidebarLayout(
@@ -121,10 +120,7 @@ ui <- fluidPage(
                           br(),
                           plotOutput("topicplot")),
                    column(6,
-                          #br(),
                           plotOutput("circleplot")),
-                   #br(),
-                   #plotOutput("topicplot"),
                    p(actionButton("reset2", strong("Suche löschen")), align = "right"),
                    DT::dataTableOutput("topiclist")
           ),
@@ -215,7 +211,7 @@ server <- function(input, output, session) {
     xyplot(trends()[[3]],
            layout = c(5,2),
            col = c("black"),
-           ylim = c(0,0.05),
+           ylim = c(0,0.04),
            #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex = 0.6),
            ylab = list("Prävalenz", cex = 0.6),
            xlab = "",
@@ -231,11 +227,10 @@ server <- function(input, output, session) {
   
   output$cold <- renderPlot({
     colors[select_cold()] <- "gold"
-    #ticks <- ifelse((input$range[2]-input$range[1])<3, 1, 6)
     xyplot(trends()[[4]],
            layout = c(5,2),
            col = c("black"),
-           ylim = c(0,0.05),
+           ylim = c(0,0.04),
            #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex = 0.6),
            ylab = list("Prävalenz", cex = 0.6),
            xlab = "",
@@ -253,7 +248,7 @@ server <- function(input, output, session) {
     #xyplot(theta_mean_by_year_ts[,select()], # fixed total time interval
     xyplot(window(theta_mean_by_year_ts, input$range[1], c(input$range[1], input$range[2]-input$range[1]+1))[,select()],
            col = "steelblue3",
-           ylim = c(0,0.05),
+           ylim = c(0,0.04),
            #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
            ylab = list("Prävalenz", cex=0.6),
            xlab = "",
@@ -268,16 +263,15 @@ server <- function(input, output, session) {
     plot(1, xlab="", ylab="", xaxt='n', yaxt='n', asp = 1, xlim = c(0.6, 1.4), ylim = c(0.6, 1.4),
          #main = list(paste0("Prävalenz von Thema ", select(), ": ", round(topic[select(),3], 4)), par(cex.main = 1)), type="n")
          main = list(paste0("Prävalenz von Thema ", select(), " im Vergleich "), par(cex.main = 1)), type="n")
-    plotrix::draw.circle(1, 1, topic[select(),3]*10, col="gold", border="gold") # current topic
-    plotrix::draw.circle(1, 1, (1/(dim(topic)[1]))*10, border="steelblue3", col="white", lty="solid", density=0) # average
-    plotrix::draw.circle(1, 1, max(topic[,3])*10, border="black", col="white", lty="dotted", density=0) # max
+    plotrix::draw.circle(1, 1, topic[select(),3]*16, col="gold", border="gold") # current topic
+    plotrix::draw.circle(1, 1, (1/(dim(topic)[1]))*16, border="steelblue3", col="white", lty="solid", density=0) # average
+    plotrix::draw.circle(1, 1, max(topic[,3])*16, border="black", col="white", lty="dotted", density=0) # max
     #plotrix::draw.circle(1, 1, min(topic[,3])*10, border="black", col="white", lty="solid", density=0) # min
     legend("bottomright",
            legend=c("Maximum", "Durchschnitt"), 
            col=c("black", "steelblue3"), 
            lty=c("dotted", "solid"), 
            cex=0.6)
-    
   }, res=125)
   
   
@@ -296,7 +290,7 @@ server <- function(input, output, session) {
     table_popular[ ,c(1,2,3,4)] <- table_popular[ ,c(3,4,2,1)]
     names(table_popular) <- c("Rang", "Nr.", "Thema", "Prävalenz")
     table_popular[,4] <- round(table_popular[,4], 4)
-    table_popular$Recherche <- createLink(table_popular$Thema)
+    table_popular$Recherche <- createLink(table_popular$Thema, booster)
     return(table_popular)
   }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
   options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
@@ -311,7 +305,7 @@ server <- function(input, output, session) {
     table_popular_range[ ,c(1,2,3,4)] <- table_popular_range[ ,c(3,4,2,1)]
     names(table_popular_range) <- c("Rang", "Nr.", "Thema", "Prävalenz")
     table_popular_range[,4] <- round(table_popular_range[,4], 4) 
-    table_popular_range$Recherche <- createLink(table_popular_range$Thema)
+    table_popular_range$Recherche <- createLink(table_popular_range$Thema, booster)
     return(table_popular_range)
   }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
   options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
@@ -319,7 +313,7 @@ server <- function(input, output, session) {
   # hot topics #
   output$hotterms <- DT::renderDataTable({
     table_hot <- trends()[[1]]
-    table_hot$Recherche <- createLink(table_hot$Thema)
+    table_hot$Recherche <- createLink(table_hot$Thema, booster)
     names(table_hot)[2] <- ("Nr.")
     return(table_hot)
     }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
@@ -328,7 +322,7 @@ server <- function(input, output, session) {
   # cold topic #
   output$coldterms <- DT::renderDataTable({
     table_cold <- trends()[[2]]
-    table_cold$Recherche <- createLink(table_cold$Thema)
+    table_cold$Recherche <- createLink(table_cold$Thema, booster)
     names(table_cold)[2] <- ("Nr.")
     return(table_cold)
     }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
@@ -336,7 +330,7 @@ server <- function(input, output, session) {
   
   # all topics #
   output$topiclist <- DT::renderDataTable({
-    topic$Recherche <- createLink(topic$Thema)
+    topic$Recherche <- createLink(topic$Thema, booster)
     topic[,3] <- round(topic[,3], 4)
     names(topic)[1] <- ("Nr.")
     return(topic)
