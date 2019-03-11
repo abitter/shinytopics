@@ -11,7 +11,7 @@
 
 # packages ----
 suppressPackageStartupMessages( if (!require("pacman")) install.packages("pacman") )
-pacman::p_load(shiny, lattice, DT, plotrix)
+pacman::p_load(shiny, shinyWidgets, forecast, lattice, DT, plotrix)
 
 
 # data ----
@@ -43,7 +43,7 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("Shiny Topics v0.5"),
+   titlePanel("Shiny Topics v0.6"),
    
    # Sidebar
    sidebarLayout(
@@ -103,7 +103,7 @@ ui <- fluidPage(
                    br(),
                    DT::dataTableOutput("popularrange"),
                    br()
-          ),
+                   ),
           tabPanel("Hot Topics", 
                    br(),
                    plotOutput("hot"),
@@ -124,6 +124,31 @@ ui <- fluidPage(
                           plotOutput("circleplot")),
                    p(actionButton("reset2", strong("Suche löschen")), align = "right"),
                    DT::dataTableOutput("topiclist")
+                   ),
+          tabPanel("Ereignisse", 
+                   column(6, 
+                          br(),
+                          numericInput("year", #width = "50%",
+                                       label = "Jahr des Ereignisses:",
+                                       # value = as.numeric(years[length(years)]),
+                                       value = 1980, 
+                                       min = 1980, 
+                                       max = as.numeric(years[length(years)])),
+                          br(),
+                          searchInput(
+                            inputId = "searchbox", label = "Suche nach Themen",
+                            placeholder = "Bitte Suchbegriff eingeben",
+                            btnSearch = icon("search"),
+                            btnReset = icon("remove"),
+                            width = "450px"
+                          ),
+                          br(),
+                          DT::dataTableOutput("eventtable"),
+                          br(),
+                          verbatimTextOutput(outputId = "res")),
+                   column(6,
+                          br(),
+                          plotOutput("eventplot"))
           ),
         type = "tabs")
         
@@ -145,13 +170,26 @@ server <- function(input, output, session) {
     clearSearch(proxy)
   })
   
-  # transform invalid year input
-  #finalInput <- reactive({
-  #  if (input$year < 1980) return(1980)
-  #  if (input$year > 2017) return(2017)
-  #  input$year
-  #})
+  # search box input to lower case
+  search_lower <- reactive({
+    tolower(input$searchbox)
+  })
   
+  output$res <- renderPrint({
+    #topic[(grepl(search_lower(), topic$Thema)),][select_event(), 1]
+    finalInput()
+  })
+  
+
+  
+  # transform invalid year input
+  finalInput <- reactive({
+    if (input$year < 1980) return(1980)
+    if (input$year > 2015) return(2015)
+    input$year
+  })
+  
+
   # clickable selection of data table rows
   select <- reactive({
     if (is.null(input$topiclist_rows_selected) == TRUE) return(1) # show plot for Topic 1 in case no row is selected
@@ -172,6 +210,10 @@ server <- function(input, output, session) {
   select_cold <- reactive({
     if (is.null(input$coldterms_rows_selected) == TRUE) return(0)
     input$coldterms_rows_selected
+  })
+  select_event <- reactive({
+    if (is.null(input$eventtable_rows_selected) == TRUE) return(1) # show plot for Topic 1 in case no row is selected
+    input$eventtable_rows_selected
   })
  
   
@@ -276,6 +318,36 @@ server <- function(input, output, session) {
            cex=0.6)
   }, res=125)
   
+  output$eventplot <- renderPlot({
+    inp <- topic[(grepl(search_lower(), topic$Thema)),][select_event(), 1]
+    # linear regression
+    #years2 <- 1980:finalInput()
+    #lm1 <- lm(theta_mean_by_year[1:(finalInput()-1980+1), inp] ~ years2)
+    #linreg <- list()
+    #linreg[[1]] <- lm1$fitted.values
+    #linreg[[2]] <- lm1$fitted.values[length(lm1$fitted.values)] + lm1$coefficients[2]
+    #for (i in 3:(length(theta_mean_by_year[,1]) - length(lm1$fitted.values) + 1)){
+    #  linreg[[i]] <- linreg[[i-1]] + lm1$coefficients[2]
+    #}
+    #linreg <- unlist(linreg)
+    #names(linreg) <- years
+    #
+    # forecast #
+    window <- window(theta_mean_by_year_ts[, inp], start = 1980, end = finalInput())
+    forecast <- forecast(window, h = length(theta_mean_by_year_ts[, inp]) - length(window))
+    plot(forecast, ylim = c(0, max(theta_mean_by_year_ts[,inp])), showgap = FALSE, PI = FALSE,
+         main = list(paste("Beobachteter und erwarteter Verlauf von Thema", inp), cex = 1.25))
+    lines(theta_mean_by_year_ts[,inp])
+    #
+    #plot(window(theta_mean_by_year_ts, input$range[1], c(input$range[1], input$range[2]-input$range[1]+1))[, inp], 
+    #     type = "l", col = "steelblue3", ylab = list("Prävalenz", cex = 0.8), xlab = "", lwd = 3, #ylim = c(0, 0.04),
+    #     main = list(paste("Zeitlicher Verlauf von Thema", inp), cex = 1.25))
+    grid(NULL, NULL, lty = "solid", col = "lightgrey")
+    abline(v = finalInput(), lty = "dotted", col = "steelblue3", lwd = 2)
+    #lines(x = years2, y = lm1$fitted.values, col = "red", lwd = 2)
+    #lines(x = years, y = linreg, col = "red", lwd = 2, lty = "dashed")
+  }, res = 100)
+  
   
   ### data tables ##
   
@@ -341,14 +413,14 @@ server <- function(input, output, session) {
   # for clear search button:
   proxy <- dataTableProxy("topiclist")
   
-  
-  ### Dynamic Search in PubPsych ###
-  #output$link <- renderUI({
-  #  a(paste("Literatur zu Thema", select(), "in PSYNDEX"), 
-  #    href=paste0("https://pubpsych.zpid.de/pubpsych/Search.action?search=&q=%28DFK%3D%28", 
-  #                topdocs_string[[select()]],
-  #                "%29%29+DB%3DPSYNDEX&stats=TOP"), target="_blank")
-  #  })
+  # event selection #
+  output$eventtable <- DT::renderDataTable({
+    list <- topic[(grepl(search_lower(), topic$Thema)),][,-3]
+    names(list)[1] <- ("Nr.")
+    return(list)
+  }, escape = FALSE, selection = list(mode = "single", selected = 1), rownames = FALSE, class = 'stripe',
+  options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
+
 
 }
 
