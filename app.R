@@ -11,7 +11,7 @@
 
 # packages ----
 suppressPackageStartupMessages( if (!require("pacman")) install.packages("pacman") )
-pacman::p_load(shiny, shinyWidgets, forecast, lattice, DT, plotrix)
+pacman::p_load(shiny, shinyWidgets, forecast, nnet, lattice, DT, plotrix)
 
 
 # data ----
@@ -28,6 +28,7 @@ booster <- readRDS("data/booster.rds")
 # sources ----
 source("trends.R")
 source("links.R")
+source("quantqual.R")
 
 
 # Define UI ----
@@ -131,7 +132,7 @@ ui <- fluidPage(
                           numericInput("year", #width = "50%",
                                        label = "Jahr des Ereignisses:",
                                        # value = as.numeric(years[length(years)]),
-                                       value = 1980, 
+                                       value = 2000, 
                                        min = 1980, 
                                        max = as.numeric(years[length(years)])),
                           br(),
@@ -184,7 +185,7 @@ server <- function(input, output, session) {
   
   # transform invalid year input
   finalInput <- reactive({
-    if (input$year < 1980) return(1980)
+    if (input$year < 1981) return(1981)
     if (input$year > 2015) return(2015)
     input$year
   })
@@ -332,9 +333,11 @@ server <- function(input, output, session) {
     #linreg <- unlist(linreg)
     #names(linreg) <- years
     #
-    # forecast #
+    # forecast with MLP#
     window <- window(theta_mean_by_year_ts[, inp], start = 1980, end = finalInput())
-    forecast <- forecast(window, h = length(theta_mean_by_year_ts[, inp]) - length(window))
+    mlp <- plotXY(1:length(window), window, complexity = 2)
+    mlp_ts <- ts(mlp$prediction, start = 1980)
+    forecast <- forecast(mlp_ts, h = length(theta_mean_by_year_ts[, inp]) - length(window))
     plot(forecast, ylim = c(0, max(theta_mean_by_year_ts[,inp])), showgap = FALSE, PI = FALSE,
          main = list(paste("Beobachteter und erwarteter Verlauf von Thema", inp), cex = 1.25))
     lines(theta_mean_by_year_ts[,inp])
