@@ -10,8 +10,16 @@
 
 
 # packages ----
-suppressPackageStartupMessages( if (!require("pacman")) install.packages("pacman") )
-pacman::p_load(shiny, shinyWidgets, forecast, nnet, lattice, DT, plotrix)
+#suppressPackageStartupMessages( if (!require("pacman")) install.packages("pacman") )
+#pacman::p_load(shiny, shinyWidgets, forecast, nnet, lattice, DT, plotrix)
+
+library(shiny)
+library(shinyWidgets)
+library(forecast)
+library(nnet)
+library(lattice)
+library(DT)
+library(plotrix)
 
 
 # data ----
@@ -22,7 +30,6 @@ theta_mean_by_year_ts <- readRDS("data/theta_mean_by_year_ts.rds")
 years <- readRDS("data/years.rds")
 topic <- readRDS("data/topic.rds")
 booster <- readRDS("data/booster.rds")
-#topdocs_string <- readRDS("data/topdocs_string.rds")
 
 
 # sources ----
@@ -31,6 +38,19 @@ source("links.R")
 source("quantqual.R")
 
 
+# function for aligning slider
+alignCenter <- function(el) {
+  htmltools::tagAppendAttributes(el, style="margin-left:auto;margin-right:auto;")
+}
+
+
+# colors ----
+
+col_bars <- "#0094c5"
+col_highlight <- "gold"
+# colors in tags$style have to be set manually in respective lines
+
+  
 # Define UI ----
 ui <- fluidPage(
   
@@ -45,22 +65,23 @@ ui <- fluidPage(
   
   # Application title
    titlePanel("Shiny Topics v0.6"),
-   
-   # Sidebar
+  
+     # Sidebar
    sidebarLayout(
      sidebarPanel(width = 3,
-                     
-       #numericInput("year", #width = "50%",
-        #            label = h4("Jahr:"),
-         #           value = as.numeric(years[length(years)]), 
-          #          min = 1980, 
-           #         max = as.numeric(years[length(years)])),
        
-       # slider color
-       #tags$style(HTML(".js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #a2b21e}")),
+       # slider colors (add line for every slider)
+       tags$style(HTML(".js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #0094c5}")),
+       tags$style(HTML(".js-irs-1 .irs-single, .js-irs-1 .irs-bar-edge, .js-irs-1 .irs-bar {background: #0094c5}")),
+       
+       #numericInput("year", #width = "50%",
+       #            label = h4("Jahr:"),
+       #           value = as.numeric(years[length(years)]), 
+       #          min = 1980, 
+       #         max = as.numeric(years[length(years)])),
        
        sliderInput("range",
-                    label = h4("Zeit:"),
+                    label = h4("Zeitraum festlegen:"),
                     min = 1980,
                     max = as.numeric(years[length(years)]),
                     value = c(1980, as.numeric(years[length(years)])),
@@ -89,8 +110,9 @@ ui <- fluidPage(
        ),
       
       # Main Panel
-      mainPanel(width = 9,
+      mainPanel(width = 9, 
         tabsetPanel(
+          # slider color
           tabPanel("Themen eines Jahres", 
                    br(),
                    plotOutput("topicchart"),
@@ -123,39 +145,51 @@ ui <- fluidPage(
                           plotOutput("topicplot")),
                    column(6,
                           plotOutput("circleplot")),
-                   p(actionButton("reset2", strong("Suche löschen")), align = "right"),
+                   br(),
+                   searchInput(
+                     inputId = "searchbox", label = "Suche nach Themen",
+                     placeholder = "Bitte Suchbegriff eingeben",
+                     btnSearch = icon("search"),
+                     btnReset = icon("remove"),
+                     width = "450px"),
+                   #p(actionButton("reset2", strong("Suche löschen")), align = "right"),
                    DT::dataTableOutput("topiclist")
                    ),
-          tabPanel("Ereignisse", 
+          tabPanel("Erwartete Verläufe", 
                    column(6, 
                           br(),
-                          numericInput("year", #width = "50%",
-                                       label = "Jahr des Ereignisses:",
-                                       # value = as.numeric(years[length(years)]),
-                                       value = 2000, 
-                                       min = 1980, 
-                                       max = as.numeric(years[length(years)])),
+                          br(),
+                          h4("Vergleichen Sie den beobachteten mit dem erwarteten Verlauf ab einem gewünschten Zeitpunkt."),
+                          br(),
                           br(),
                           searchInput(
-                            inputId = "searchbox", label = "Suche nach Themen",
+                            inputId = "searchbox2", label = "Suche nach Themen",
                             placeholder = "Bitte Suchbegriff eingeben",
                             btnSearch = icon("search"),
                             btnReset = icon("remove"),
-                            width = "450px"
-                          ),
+                            width = "450px"),
                           br(),
-                          DT::dataTableOutput("eventtable"),
-                          br(),
-                          verbatimTextOutput(outputId = "res")),
+                          DT::dataTableOutput("eventtable")),
                    column(6,
                           br(),
-                          plotOutput("eventplot"))
+                          plotOutput("eventplot"),
+                          #br(),
+                          #verbatimTextOutput(outputId = "info"),
+                          alignCenter(sliderInput("year",
+                                      label = "Zeitpunkt festlegen:",
+                                      min = 1981,
+                                      max = as.numeric(years[length(years)]) - 2,
+                                      value = 2000,
+                                      sep = "",
+                                      width = "80%",
+                                      ticks = FALSE)))
           ),
         type = "tabs")
         
       )
    )
 )
+
 
 # Define server logic ----
 server <- function(input, output, session) {
@@ -175,13 +209,14 @@ server <- function(input, output, session) {
   search_lower <- reactive({
     tolower(input$searchbox)
   })
-  
-  output$res <- renderPrint({
-    #topic[(grepl(search_lower(), topic$Thema)),][select_event(), 1]
-    finalInput()
+  search_lower2 <- reactive({
+    tolower(input$searchbox2)
   })
   
-
+  # info box for development
+  output$info <- renderPrint({
+   "test"
+  })
   
   # transform invalid year input
   finalInput <- reactive({
@@ -228,10 +263,10 @@ server <- function(input, output, session) {
   ### plots ###
   
   # default color for barchart and background of xyplots headers
-  colors <- rep("steelblue3", 10)
+  colors <- rep(col_bars, 10)
   
   output$topicchart <- renderPlot({
-    colors[(11-select_popular())] <- "gold"
+    colors[(11-select_popular())] <- col_highlight
     #barchart(head(sort(theta_mean_by_year[as.character(finalInput()), ], decreasing = TRUE), 10)[10:1],
     barchart(head(sort(theta_mean_by_year[as.character(input$range[2]), ], decreasing = TRUE), 10)[10:1], 
              col = colors, 
@@ -242,7 +277,7 @@ server <- function(input, output, session) {
   })
   
   output$topicchart2 <- renderPlot({
-    colors[(11-select_popular_range())] <- "gold"
+    colors[(11-select_popular_range())] <- col_highlight
     barchart(head(sort(colMeans(theta_mean_by_year[(input$range[1]-1979):(input$range[2]-1979), ]), decreasing = TRUE), 10)[10:1],
              col = colors, 
              main = list(paste0("Populäre Themen im Zeitraum ", input$range[1], "–", input$range[2]), cex = 1.75),
@@ -252,7 +287,7 @@ server <- function(input, output, session) {
   })
   
   output$hot <- renderPlot({
-    colors[select_hot()] <- "gold"
+    colors[select_hot()] <- col_highlight
     xyplot(trends()[[3]],
            layout = c(5,2),
            col = c("black"),
@@ -271,7 +306,7 @@ server <- function(input, output, session) {
   }, res=125)
   
   output$cold <- renderPlot({
-    colors[select_cold()] <- "gold"
+    colors[select_cold()] <- col_highlight
     xyplot(trends()[[4]],
            layout = c(5,2),
            col = c("black"),
@@ -292,7 +327,7 @@ server <- function(input, output, session) {
   output$topicplot <- renderPlot({
     #xyplot(theta_mean_by_year_ts[,select()], # fixed total time interval
     xyplot(window(theta_mean_by_year_ts, input$range[1], c(input$range[1], input$range[2]-input$range[1]+1))[,select()],
-           col = "steelblue3",
+           col = col_bars,
            ylim = c(0,0.04),
            #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
            ylab = list("Prävalenz", cex=0.6),
@@ -301,26 +336,26 @@ server <- function(input, output, session) {
            lwd = 3,
            scales = list(x = list(alternating = FALSE), tck = c(1,0), y = list(cex = 0.6)),
            main = list(paste("Zeitlicher Verlauf von Thema", select()), cex = 1),
-           par.settings = list(strip.background = list(col = "steelblue3")))
+           par.settings = list(strip.background = list(col = col_bars)))
   }, res=125)
   
   output$circleplot <- renderPlot({
     plot(1, xlab="", ylab="", xaxt='n', yaxt='n', asp = 1, xlim = c(0.6, 1.4), ylim = c(0.6, 1.4),
          #main = list(paste0("Prävalenz von Thema ", select(), ": ", round(topic[select(),3], 4)), par(cex.main = 1)), type="n")
          main = list(paste0("Prävalenz von Thema ", select(), " im Vergleich "), par(cex.main = 1)), type="n")
-    plotrix::draw.circle(1, 1, topic[select(),3]*16, col="gold", border="gold") # current topic
-    plotrix::draw.circle(1, 1, (1/(dim(topic)[1]))*16, border="steelblue3", col="white", lty="solid", density=0) # average
+    plotrix::draw.circle(1, 1, topic[select(),3]*16, col=col_highlight, border=col_highlight) # current topic
+    plotrix::draw.circle(1, 1, (1/(dim(topic)[1]))*16, border=col_bars, col="white", lty="solid", density=0) # average
     plotrix::draw.circle(1, 1, max(topic[,3])*16, border="black", col="white", lty="dotted", density=0) # max
     #plotrix::draw.circle(1, 1, min(topic[,3])*10, border="black", col="white", lty="solid", density=0) # min
     legend("bottomright",
            legend=c("Maximum", "Durchschnitt"), 
-           col=c("black", "steelblue3"), 
+           col=c("black", col_bars), 
            lty=c("dotted", "solid"), 
            cex=0.6)
   }, res=125)
   
   output$eventplot <- renderPlot({
-    inp <- topic[(grepl(search_lower(), topic$Thema)),][select_event(), 1]
+    inp <- topic[(grepl(search_lower2(), topic$Thema)),][select_event(), 1]
     # linear regression
     #years2 <- 1980:finalInput()
     #lm1 <- lm(theta_mean_by_year[1:(finalInput()-1980+1), inp] ~ years2)
@@ -333,22 +368,23 @@ server <- function(input, output, session) {
     #linreg <- unlist(linreg)
     #names(linreg) <- years
     #
-    # forecast with MLP#
+    #plot(window(theta_mean_by_year_ts, input$range[1], c(input$range[1], input$range[2]-input$range[1]+1))[, inp], 
+    #     type = "l", col = col_bars, ylab = list("Prävalenz", cex = 0.8), xlab = "", lwd = 3, #ylim = c(0, 0.04),
+    #     main = list(paste("Zeitlicher Verlauf von Thema", inp), cex = 1.25))
+    #lines(x = years2, y = lm1$fitted.values, col = "red", lwd = 2)
+    #lines(x = years, y = linreg, col = "red", lwd = 2, lty = "dashed")
+    #
+    # forecast with MLP #
     window <- window(theta_mean_by_year_ts[, inp], start = 1980, end = finalInput())
     mlp <- plotXY(1:length(window), window, complexity = 2)
     mlp_ts <- ts(mlp$prediction, start = 1980)
     forecast <- forecast(mlp_ts, h = length(theta_mean_by_year_ts[, inp]) - length(window))
-    plot(forecast, ylim = c(0, max(theta_mean_by_year_ts[,inp])), showgap = FALSE, PI = FALSE,
-         main = list(paste("Beobachteter und erwarteter Verlauf von Thema", inp), cex = 1.25))
+    plot(forecast, ylim = c(0, max(theta_mean_by_year_ts[,inp])), showgap = FALSE, PI = TRUE,
+         main = list(paste("Beobachteter und erwarteter Verlauf von Thema", inp), cex = 1.25), # remove main to see method
+         col = col_bars, fcol = "#83227a")
     lines(theta_mean_by_year_ts[,inp])
-    #
-    #plot(window(theta_mean_by_year_ts, input$range[1], c(input$range[1], input$range[2]-input$range[1]+1))[, inp], 
-    #     type = "l", col = "steelblue3", ylab = list("Prävalenz", cex = 0.8), xlab = "", lwd = 3, #ylim = c(0, 0.04),
-    #     main = list(paste("Zeitlicher Verlauf von Thema", inp), cex = 1.25))
     grid(NULL, NULL, lty = "solid", col = "lightgrey")
-    abline(v = finalInput(), lty = "dotted", col = "steelblue3", lwd = 2)
-    #lines(x = years2, y = lm1$fitted.values, col = "red", lwd = 2)
-    #lines(x = years, y = linreg, col = "red", lwd = 2, lty = "dashed")
+    abline(v = finalInput(), lty = "dashed", col = col_bars, lwd = 2)
   }, res = 100)
   
   
@@ -407,18 +443,20 @@ server <- function(input, output, session) {
   
   # all topics #
   output$topiclist <- DT::renderDataTable({
+    topic <- topic[(grepl(search_lower(), topic$Thema)),]
     topic$Recherche <- createLink(topic$Thema, booster)
     topic[,3] <- round(topic[,3], 4)
     names(topic)[1] <- ("Nr.")
     return(topic)
     }, escape = FALSE, selection = list(mode = "single", selected = 1), rownames = FALSE, class = 'stripe',
-    options = list(sDom = '<"top">flrt<"bottom">ip', searchHighlight = TRUE))
+    #options = list(sDom = '<"top">flrt<"bottom">ip', searchHighlight = TRUE))
+    options = list(lengthChange = TRUE, info = TRUE, paging = TRUE, searching = FALSE))
   # for clear search button:
-  proxy <- dataTableProxy("topiclist")
+  #proxy <- dataTableProxy("topiclist")
   
   # event selection #
   output$eventtable <- DT::renderDataTable({
-    list <- topic[(grepl(search_lower(), topic$Thema)),][,-3]
+    list <- topic[(grepl(search_lower2(), topic$Thema)),][,-3]
     names(list)[1] <- ("Nr.")
     return(list)
   }, escape = FALSE, selection = list(mode = "single", selected = 1), rownames = FALSE, class = 'stripe',
