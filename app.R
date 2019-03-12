@@ -326,7 +326,8 @@ server <- function(input, output, session) {
   
   output$topicplot <- renderPlot({
     #xyplot(theta_mean_by_year_ts[,select()], # fixed total time interval
-    xyplot(window(theta_mean_by_year_ts, input$range[1], c(input$range[1], input$range[2]-input$range[1]+1))[,select()],
+    inp <- topic[(grepl(search_lower(), topic$Thema)),][select(), 1] # get correct topic number from filtered list
+    xyplot(window(theta_mean_by_year_ts, input$range[1], c(input$range[1], input$range[2]-input$range[1]+1))[,inp],
            col = col_bars,
            ylim = c(0,0.04),
            #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
@@ -335,15 +336,16 @@ server <- function(input, output, session) {
            type = c("l", "g"),
            lwd = 3,
            scales = list(x = list(alternating = FALSE), tck = c(1,0), y = list(cex = 0.6)),
-           main = list(paste("Zeitlicher Verlauf von Thema", select()), cex = 1),
+           main = list(paste("Zeitlicher Verlauf von Thema", inp), cex = 1),
            par.settings = list(strip.background = list(col = col_bars)))
   }, res=125)
   
   output$circleplot <- renderPlot({
+    inp <- topic[(grepl(search_lower(), topic$Thema)),][select(), 1]
     plot(1, xlab="", ylab="", xaxt='n', yaxt='n', asp = 1, xlim = c(0.6, 1.4), ylim = c(0.6, 1.4),
          #main = list(paste0("Prävalenz von Thema ", select(), ": ", round(topic[select(),3], 4)), par(cex.main = 1)), type="n")
-         main = list(paste0("Prävalenz von Thema ", select(), " im Vergleich "), par(cex.main = 1)), type="n")
-    plotrix::draw.circle(1, 1, topic[select(),3]*16, col=col_highlight, border=col_highlight) # current topic
+         main = list(paste0("Prävalenz von Thema ", inp, " im Vergleich "), par(cex.main = 1)), type = "n")
+    plotrix::draw.circle(1, 1, topic[inp, 3]*16, col=col_highlight, border=col_highlight) # current topic
     plotrix::draw.circle(1, 1, (1/(dim(topic)[1]))*16, border=col_bars, col="white", lty="solid", density=0) # average
     plotrix::draw.circle(1, 1, max(topic[,3])*16, border="black", col="white", lty="dotted", density=0) # max
     #plotrix::draw.circle(1, 1, min(topic[,3])*10, border="black", col="white", lty="solid", density=0) # min
