@@ -64,7 +64,7 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("Shiny Topics v0.6"),
+   titlePanel("PSYNDEX Topics"), #Shiny Topics v0.6.1
   
      # Sidebar
    sidebarLayout(
@@ -291,7 +291,7 @@ server <- function(input, output, session) {
     xyplot(trends()[[3]],
            layout = c(5,2),
            col = c("black"),
-           ylim = c(0,0.04),
+           ylim = c(0, max(theta_mean_by_year)),
            #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex = 0.6),
            ylab = list("Prävalenz", cex = 0.6),
            xlab = "",
@@ -310,7 +310,7 @@ server <- function(input, output, session) {
     xyplot(trends()[[4]],
            layout = c(5,2),
            col = c("black"),
-           ylim = c(0,0.04),
+           ylim = c(0, max(theta_mean_by_year)),
            #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex = 0.6),
            ylab = list("Prävalenz", cex = 0.6),
            xlab = "",
@@ -329,7 +329,7 @@ server <- function(input, output, session) {
     inp <- topic[(grepl(search_lower(), topic$Thema)),][select(), 1] # get correct topic number from filtered list
     xyplot(window(theta_mean_by_year_ts, input$range[1], c(input$range[1], input$range[2]-input$range[1]+1))[,inp],
            col = col_bars,
-           ylim = c(0,0.04),
+           ylim = c(0, max(theta_mean_by_year)),
            #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
            ylab = list("Prävalenz", cex=0.6),
            xlab = "",
@@ -342,13 +342,14 @@ server <- function(input, output, session) {
   
   output$circleplot <- renderPlot({
     inp <- topic[(grepl(search_lower(), topic$Thema)),][select(), 1]
-    plot(1, xlab="", ylab="", xaxt='n', yaxt='n', asp = 1, xlim = c(0.6, 1.4), ylim = c(0.6, 1.4),
+    factor <- 40 # depends on number of topics k
+    plot(1, xlab="", ylab="", xaxt='n', yaxt='n', asp = 1, #xlim = c(0.6, 1.4), ylim = c(0.6, 1.4),
          #main = list(paste0("Prävalenz von Thema ", select(), ": ", round(topic[select(),3], 4)), par(cex.main = 1)), type="n")
          main = list(paste0("Prävalenz von Thema ", inp, " im Vergleich "), par(cex.main = 1)), type = "n")
-    plotrix::draw.circle(1, 1, topic[inp, 3]*16, col=col_highlight, border=col_highlight) # current topic
-    plotrix::draw.circle(1, 1, (1/(dim(topic)[1]))*16, border=col_bars, col="white", lty="solid", density=0) # average
-    plotrix::draw.circle(1, 1, max(topic[,3])*16, border="black", col="white", lty="dotted", density=0) # max
-    #plotrix::draw.circle(1, 1, min(topic[,3])*10, border="black", col="white", lty="solid", density=0) # min
+    plotrix::draw.circle(1, 1, topic[inp, 3]*factor, col=col_highlight, border=col_highlight) # current topic
+    plotrix::draw.circle(1, 1, (1/(dim(topic)[1]))*factor, border=col_bars, col="white", lty="solid", density=0) # average
+    plotrix::draw.circle(1, 1, max(topic[,3])*factor, border="black", col="white", lty="dotted", density=0) # max
+    #plotrix::draw.circle(1, 1, min(topic[,3])*factor, border="black", col="white", lty="solid", density=0) # min
     legend("bottomright",
            legend=c("Maximum", "Durchschnitt"), 
            col=c("black", col_bars), 

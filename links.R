@@ -17,7 +17,8 @@ createLink <- function(val, boost) {
   for (i in 1:length(val)){
     list[[i]] <- unlist(strsplit(val[i], ", ", fixed = TRUE))
     for (j in 1:4){
-      list[[i]][j] <- paste0('"', list[[i]][j], '"^', boost[[i]][j]) # add boost factors for first 4 terms
+      list[[i]][j] <- paste0('"', list[[i]][j], '"^', boost[j, i]) # add boost factors for first 4 terms
+	  # list[[i]][j] <- paste0('"', list[[i]][j], '"^', boost[[i]][j]) STM version
     }
     list[[i]][5] <- paste0('"', list[[i]][5], '"') # Term 5 is reference, so no boosting
     list[[i]] <- paste0(list[[i]], collapse=" OR ")
