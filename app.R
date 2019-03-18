@@ -64,7 +64,7 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("PSYNDEX Topics"), #Shiny Topics v0.6.1
+   titlePanel("PSYNDEX Topics"), #Shiny Topics v0.6.2
   
      # Sidebar
    sidebarLayout(
@@ -144,7 +144,10 @@ ui <- fluidPage(
                           br(),
                           plotOutput("topicplot")),
                    column(6,
-                          plotOutput("circleplot")),
+                          plotOutput("circleplot"),
+                          p("Das Kreisdiagramm zeigt Ihnen an, ob ein Thema über- oder unterdurschnittlich 
+                            stark in der psychologischen Fachliteratur aufgegriffen wird.", align = "center")
+                          ),
                    br(),
                    searchInput(
                      inputId = "searchbox", label = "Suche nach Themen",
@@ -152,6 +155,9 @@ ui <- fluidPage(
                      btnSearch = icon("search"),
                      btnReset = icon("remove"),
                      width = "450px"),
+                   p("Mögliche Suchbegriffe finden Sie", 
+                     a("hier", href = "https://www.psyndex.de/pub/info/PSYNDEXterms2016.pdf", target="_blank")),
+                   br(),
                    #p(actionButton("reset2", strong("Suche löschen")), align = "right"),
                    DT::dataTableOutput("topiclist")
                    ),
@@ -159,7 +165,8 @@ ui <- fluidPage(
                    column(6, 
                           br(),
                           br(),
-                          h4("Vergleichen Sie den beobachteten mit dem erwarteten Verlauf ab einem gewünschten Zeitpunkt."),
+                          h4("Vergleichen Sie den beobachteten mit dem erwarteten Verlauf", align = "center"),
+                          h4("ab einem gewünschten Zeitpunkt.", align = "center"),
                           br(),
                           br(),
                           searchInput(
@@ -168,6 +175,8 @@ ui <- fluidPage(
                             btnSearch = icon("search"),
                             btnReset = icon("remove"),
                             width = "450px"),
+                          p("Mögliche Suchbegriffe finden Sie", 
+                            a("hier", href = "https://www.psyndex.de/pub/info/PSYNDEXterms2016.pdf", target="_blank")),
                           br(),
                           DT::dataTableOutput("eventtable")),
                    column(6,
@@ -343,7 +352,8 @@ server <- function(input, output, session) {
   output$circleplot <- renderPlot({
     inp <- topic[(grepl(search_lower(), topic$Thema)),][select(), 1]
     factor <- 40 # depends on number of topics k
-    plot(1, xlab="", ylab="", xaxt='n', yaxt='n', asp = 1, #xlim = c(0.6, 1.4), ylim = c(0.6, 1.4),
+    lim <- 0.18 # adjust depending on number of topics k
+    plot(1, xlab="", ylab="", xaxt='n', yaxt='n', asp = 1, xlim = c(1-lim, 1+lim), ylim = c(1-lim, 1+lim),
          #main = list(paste0("Prävalenz von Thema ", select(), ": ", round(topic[select(),3], 4)), par(cex.main = 1)), type="n")
          main = list(paste0("Prävalenz von Thema ", inp, " im Vergleich "), par(cex.main = 1)), type = "n")
     plotrix::draw.circle(1, 1, topic[inp, 3]*factor, col=col_highlight, border=col_highlight) # current topic
