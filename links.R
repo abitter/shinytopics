@@ -12,12 +12,12 @@
 # Factors were computed by dividing the beta probabilites of Terms 1-4 by beta of Term 5
 
 
-createLink <- function(val, boost) {
+createLink <- function(val, boost, topicnum) {
   list <- list()
   for (i in 1:length(val)){
     list[[i]] <- unlist(strsplit(val[i], ", ", fixed = TRUE))
     for (j in 1:4){
-      list[[i]][j] <- paste0('"', list[[i]][j], '"^', boost[j, i]) # add boost factors for first 4 terms
+      list[[i]][j] <- paste0('"', list[[i]][j], '"^', boost[j, topicnum[i]]) # add boost factors for first 4 terms
 	  # list[[i]][j] <- paste0('"', list[[i]][j], '"^', boost[[i]][j]) STM version
     }
     list[[i]][5] <- paste0('"', list[[i]][5], '"') # Term 5 is reference, so no boosting

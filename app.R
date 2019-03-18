@@ -64,7 +64,7 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("PSYNDEX Topics"), #Shiny Topics v0.6.2
+   titlePanel("PSYNDEX Topics"), #Shiny Topics v0.6.3
   
      # Sidebar
    sidebarLayout(
@@ -73,6 +73,24 @@ ui <- fluidPage(
        # slider colors (add line for every slider)
        tags$style(HTML(".js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #0094c5}")),
        tags$style(HTML(".js-irs-1 .irs-single, .js-irs-1 .irs-bar-edge, .js-irs-1 .irs-bar {background: #0094c5}")),
+       
+       # color of PSYNDEX search buttom
+       # https://stackoverflow.com/questions/46232856/applying-2-different-css-styles-on-shiny-button
+       tags$style(HTML(".btn {
+                       color: #fff;
+                       background-color: #0094c5;
+                       border: 2px #0094c5 solid;
+                       }
+                       .btn:hover {
+                       color: #fff;
+                       background-color: #241b3e;
+                       }
+                       .btn-default.active, .btn-default:active, .open > .dropdown-toggle.btn-default {
+                       color: #fff;
+                       background-color: #0094c5;
+                       border-color: #0094c5;
+                       }
+                       ")),
        
        #numericInput("year", #width = "50%",
        #            label = h4("Jahr:"),
@@ -416,7 +434,8 @@ server <- function(input, output, session) {
     table_popular[ ,c(1,2,3,4)] <- table_popular[ ,c(3,4,2,1)]
     names(table_popular) <- c("Rang", "Nr.", "Thema", "Prävalenz")
     table_popular[,4] <- round(table_popular[,4], 4)
-    table_popular$Recherche <- createLink(table_popular$Thema, booster)
+    topicnum <- table_popular[,2]
+    table_popular$Recherche <- createLink(table_popular$Thema, booster, topicnum)
     return(table_popular)
   }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
   options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
@@ -431,7 +450,8 @@ server <- function(input, output, session) {
     table_popular_range[ ,c(1,2,3,4)] <- table_popular_range[ ,c(3,4,2,1)]
     names(table_popular_range) <- c("Rang", "Nr.", "Thema", "Prävalenz")
     table_popular_range[,4] <- round(table_popular_range[,4], 4) 
-    table_popular_range$Recherche <- createLink(table_popular_range$Thema, booster)
+    topicnum <- table_popular_range[,2]
+    table_popular_range$Recherche <- createLink(table_popular_range$Thema, booster, topicnum)
     return(table_popular_range)
   }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
   options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
@@ -439,7 +459,8 @@ server <- function(input, output, session) {
   # hot topics #
   output$hotterms <- DT::renderDataTable({
     table_hot <- trends()[[1]]
-    table_hot$Recherche <- createLink(table_hot$Thema, booster)
+    topicnum <- table_hot[,2]
+    table_hot$Recherche <- createLink(table_hot$Thema, booster, topicnum)
     names(table_hot)[2] <- ("Nr.")
     return(table_hot)
     }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
@@ -448,7 +469,8 @@ server <- function(input, output, session) {
   # cold topic #
   output$coldterms <- DT::renderDataTable({
     table_cold <- trends()[[2]]
-    table_cold$Recherche <- createLink(table_cold$Thema, booster)
+    topicnum <- table_cold[,2]
+    table_cold$Recherche <- createLink(table_cold$Thema, booster, topicnum)
     names(table_cold)[2] <- ("Nr.")
     return(table_cold)
     }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
@@ -457,7 +479,8 @@ server <- function(input, output, session) {
   # all topics #
   output$topiclist <- DT::renderDataTable({
     topic <- topic[(grepl(search_lower(), topic$Thema)),]
-    topic$Recherche <- createLink(topic$Thema, booster)
+    topicnum <- topic[,1]
+    topic$Recherche <- createLink(topic$Thema, booster, topicnum)
     topic[,3] <- round(topic[,3], 4)
     names(topic)[1] <- ("Nr.")
     return(topic)
