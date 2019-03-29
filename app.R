@@ -64,7 +64,7 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("PSYNDEX Topics"), #Shiny Topics v0.6.3
+   titlePanel("PSYNDEX Topics"), #Shiny Topics v0.6.4
   
      # Sidebar
    sidebarLayout(
@@ -375,7 +375,8 @@ server <- function(input, output, session) {
          #main = list(paste0("Prävalenz von Thema ", select(), ": ", round(topic[select(),3], 4)), par(cex.main = 1)), type="n")
          main = list(paste0("Prävalenz von Thema ", inp, " im Vergleich "), par(cex.main = 1)), type = "n")
     plotrix::draw.circle(1, 1, topic[inp, 3]*factor, col=col_highlight, border=col_highlight) # current topic
-    plotrix::draw.circle(1, 1, (1/(dim(topic)[1]))*factor, border=col_bars, col="white", lty="solid", density=0) # average
+    plotrix::draw.circle(1, 1, (mean(topic[,3]))*factor, border=col_bars, col="white", lty="solid", density=0) # average
+    #plotrix::draw.circle(1, 1, (1/(dim(topic)[1]))*factor, border=col_bars, col="white", lty="solid", density=0) # average if all topics are included
     plotrix::draw.circle(1, 1, max(topic[,3])*factor, border="black", col="white", lty="dotted", density=0) # max
     #plotrix::draw.circle(1, 1, min(topic[,3])*factor, border="black", col="white", lty="solid", density=0) # min
     legend("bottomright",
