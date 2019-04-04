@@ -2,6 +2,7 @@
 # Shiny Topics
 ##############
 # André Bittermann, ZPID, Trier
+# abi@leibniz-psychology.org
 #
 # This app displays research topics in psychology
 # identified using topic modeling of PSYNDEX data
@@ -23,13 +24,15 @@ library(plotrix)
 
 
 # data ----
-theta_year <- readRDS("data/theta_year.rds")
-theta_mean_by_year <- readRDS("data/theta_mean_by_year.rds")
-theta_mean_by_year_time <- readRDS("data/theta_mean_by_year_time.rds")
-theta_mean_by_year_ts <- readRDS("data/theta_mean_by_year_ts.rds")
-years <- readRDS("data/years.rds")
-topic <- readRDS("data/topic.rds")
-booster <- readRDS("data/booster.rds")
+# this data is the result of topic modeling
+# please contact the author if you need more information
+theta_year <- readRDS("data/theta_year.rds") # theta_mean_by_year with labels instead of topic numbers
+theta_mean_by_year <- readRDS("data/theta_mean_by_year.rds") # mean theta of topic by year
+theta_mean_by_year_time <- readRDS("data/theta_mean_by_year_time.rds") # for trend analysis
+theta_mean_by_year_ts <- readRDS("data/theta_mean_by_year_ts.rds") # for trend analysis
+years <- readRDS("data/years.rds") # a list of publication years
+topic <- readRDS("data/topic.rds") # a list of topics and top terms
+booster <- readRDS("data/booster.rds") # a table with factors for term boosting in PubPsych
 
 
 # sources ----
@@ -64,7 +67,7 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("PSYNDEX Topics"), #Shiny Topics v0.6.4
+   titlePanel("Shiny Topics v0.6.5"),
   
      # Sidebar
    sidebarLayout(
@@ -114,12 +117,12 @@ ui <- fluidPage(
                 a("Topic Modeling", href = "https://doi.org/10.1027/2151-2604/a000318", target="_blank"),
                 "identifiziert, basierend auf der Referenzdatenbank",
                 a("PSYNDEX.", href = "https://www.psyndex.de", target="_blank")),
-                br(),
-                p("Die Themen basieren auf den",  em("PSYNDEX Terms,"), 
-                  "welche", a("hier", href = "https://www.psyndex.de/index.php?wahl=products&uwahl=printed&uuwahl=psyndexterms", 
-                              target="_blank"), "eingesehen werden können.")
+                #br(),
+                p("Die Themen basieren auf den", a(em("PSYNDEX Terms."), href = "https://www.psyndex.de/index.php?wahl=products&uwahl=printed&uuwahl=psyndexterms", 
+                              target="_blank"))
                 ),
        
+       helpText("Die", strong(em("Prävalenz")), "beschreibt die durchschnittliche Wahrscheinlichkeit dieses Themas in den Publikationen."),
        br(),
        helpText(a("Feedback", href = "https://leibniz-psychology.org/mitarbeiter/profil-andre-bittermann/", target="_blank")),
        br(),
@@ -324,6 +327,7 @@ server <- function(input, output, session) {
            xlab = "",
            type = c("l", "g"),
            scales = list(x = list(alternating = FALSE), tck = c(1,0), y = list(cex = 0.6)),
+           #main = list(paste0("Hot topics for the years ", input$range[1], "–", input$range[2]), cex = 1),
            main = list(paste0("Hot Topics für den Zeitraum ", input$range[1], "–", input$range[2]), cex = 1),
            par.settings = list(strip.background = list(col = colors)),
            strip = function(..., bg) { # http://r.789695.n4.nabble.com/lattice-change-background-strip-color-in-one-panel-td3554612.html
@@ -413,7 +417,8 @@ server <- function(input, output, session) {
     forecast <- forecast(mlp_ts, h = length(theta_mean_by_year_ts[, inp]) - length(window))
     plot(forecast, ylim = c(0, max(theta_mean_by_year_ts[,inp])), showgap = FALSE, PI = TRUE,
          main = list(paste("Beobachteter und erwarteter Verlauf von Thema", inp), cex = 1.25), # remove main to see method
-         col = col_bars, fcol = "#83227a")
+         col = col_bars, fcol = "#83227a",
+         ylab = "Prävalenz", cex=0.6)
     lines(theta_mean_by_year_ts[,inp])
     grid(NULL, NULL, lty = "solid", col = "lightgrey")
     abline(v = finalInput(), lty = "dashed", col = col_bars, lwd = 2)
@@ -433,7 +438,7 @@ server <- function(input, output, session) {
     table_popular$NR <- as.numeric(names(head(sort(theta_mean_by_year[as.character(input$range[2]), ], decreasing = TRUE), 10)[1:10]))
     rownames(table_popular) <- NULL
     table_popular[ ,c(1,2,3,4)] <- table_popular[ ,c(3,4,2,1)]
-    names(table_popular) <- c("Rang", "Nr.", "Thema", "Prävalenz")
+    names(table_popular) <- c("Rang", "ID", "Thema", "Prävalenz")
     table_popular[,4] <- round(table_popular[,4], 4)
     topicnum <- table_popular[,2]
     table_popular$Recherche <- createLink(table_popular$Thema, booster, topicnum)
@@ -449,7 +454,7 @@ server <- function(input, output, session) {
     table_popular_range$NR <- as.numeric(names(head(sort(colMeans(theta_mean_by_year[(input$range[1]-1979):(input$range[2]-1979), ]), decreasing = TRUE), 10)[1:10]))
     rownames(table_popular_range) <- NULL
     table_popular_range[ ,c(1,2,3,4)] <- table_popular_range[ ,c(3,4,2,1)]
-    names(table_popular_range) <- c("Rang", "Nr.", "Thema", "Prävalenz")
+    names(table_popular_range) <- c("Rang", "ID", "Thema", "Prävalenz")
     table_popular_range[,4] <- round(table_popular_range[,4], 4) 
     topicnum <- table_popular_range[,2]
     table_popular_range$Recherche <- createLink(table_popular_range$Thema, booster, topicnum)
@@ -462,7 +467,8 @@ server <- function(input, output, session) {
     table_hot <- trends()[[1]]
     topicnum <- table_hot[,2]
     table_hot$Recherche <- createLink(table_hot$Thema, booster, topicnum)
-    names(table_hot)[2] <- ("Nr.")
+    names(table_hot)[2] <- ("ID")
+    #names(table_hot) <- c("Rank", "No.", "Topic", "Search")
     return(table_hot)
     }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
     options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
@@ -472,7 +478,7 @@ server <- function(input, output, session) {
     table_cold <- trends()[[2]]
     topicnum <- table_cold[,2]
     table_cold$Recherche <- createLink(table_cold$Thema, booster, topicnum)
-    names(table_cold)[2] <- ("Nr.")
+    names(table_cold)[2] <- ("ID")
     return(table_cold)
     }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',
     options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
@@ -483,7 +489,7 @@ server <- function(input, output, session) {
     topicnum <- topic[,1]
     topic$Recherche <- createLink(topic$Thema, booster, topicnum)
     topic[,3] <- round(topic[,3], 4)
-    names(topic)[1] <- ("Nr.")
+    names(topic)[1] <- ("ID")
     return(topic)
     }, escape = FALSE, selection = list(mode = "single", selected = 1), rownames = FALSE, class = 'stripe',
     #options = list(sDom = '<"top">flrt<"bottom">ip', searchHighlight = TRUE))
@@ -494,7 +500,7 @@ server <- function(input, output, session) {
   # event selection #
   output$eventtable <- DT::renderDataTable({
     list <- topic[(grepl(search_lower2(), topic$Thema)),][,-3]
-    names(list)[1] <- ("Nr.")
+    names(list)[1] <- ("ID")
     return(list)
   }, escape = FALSE, selection = list(mode = "single", selected = 1), rownames = FALSE, class = 'stripe',
   options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
