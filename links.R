@@ -18,16 +18,15 @@ createLink <- function(val, boost, topicnum) {
     list[[i]] <- unlist(strsplit(val[i], ", ", fixed = TRUE))
     for (j in 1:4){
       list[[i]][j] <- paste0('"', list[[i]][j], '"%5E', boost[j, topicnum[i]]) # add boost factors for first 4 terms
-	  # list[[i]][j] <- paste0('"', list[[i]][j], '"^', boost[[i]][j]) STM version
+	  # list[[i]][j] <- paste0('"', list[[i]][j], '"%5E', boost[[i]][j]) STM version
     }
     list[[i]][5] <- paste0('"', list[[i]][5], '"') # Term 5 is reference, so no boosting
     list[[i]] <- paste0(list[[i]], collapse="+OR+")
+    list[[i]] <- gsub("'", "%27", list[[i]]) # e.g., "Alheimer's Desease"
   }
   val <- unlist(list)
   paste0("<a href='https://pubpsych.zpid.de/pubpsych/Search.action?q=%28CT%3D%28", 
          val,"%29%29+AND+DB%3D%22PSYNDEX%22&stats=TOP' target='_blank' class='btn btn-primary'>Suche in PSYNDEX</a>")
-  #paste0("<a href='https://pubpsych.zpid.de/pubpsych/Search.action?search=&q=%28CT%3D%28", 
-  #       val,"%29%29+DB%3DPSYNDEX&stats=TOP' target='_blank' class='btn btn-primary'>Suche in PSYNDEX</a>")
          #val,"%29%29+DB%3DPSYNDEX&stats=TOP' target='_blank' class='btn btn-primary'>Search PSYNDEX</a>")
 }
 
