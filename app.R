@@ -57,10 +57,13 @@ col_highlight <- "gold"
 # Define UI ----
 ui <- fluidPage(
   
+  # call shinyalert
+  useShinyalert(),
+  
   # color of selected row; https://www.w3schools.com/colors/colors_names.asp
   tags$style(HTML('table.dataTable tbody tr.selected td, table.dataTable td.selected{background-color:gold !important;}')),
   
-    # Tab color; https://stackoverflow.com/questions/35025145/background-color-of-tabs-in-shiny-tabpanel/43201952#43201952
+  # Tab color; https://stackoverflow.com/questions/35025145/background-color-of-tabs-in-shiny-tabpanel/43201952#43201952
   tags$style(HTML(".tabbable > .nav > li[class=active]    > a {background-color: #0094c5; color:white}")),
   
   # move position of output objects
@@ -70,7 +73,7 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("Shiny Topics v1.0.0"),
+   titlePanel("Shiny Topics v1.0.1"),
   
      # Sidebar
    sidebarLayout(
@@ -115,9 +118,7 @@ ui <- fluidPage(
                        }
                        ")),
        
-       useShinyalert(),
-       
-      # numericInput("yearpop", #width = "50%",
+       # numericInput("yearpop", #width = "50%",
        #           label = h4("Jahr anzeigen:"),
         #          value = as.numeric(years[length(years)]), 
          #         min = 1980, 
@@ -278,12 +279,12 @@ server <- function(input, output, session) {
   #showModal(popup)  
   
   
-  observeEvent(input$hilfe, {
-    # Show a modal when the button is pressed
-    shinyalert(title = "Themen der psychologischen Fachliteratur",
-               text = "Die Themen wurden automatisch aus PSYNDEX-Einträgen generiert. \n\nSie können", 
-               type = "", animation = TRUE, confirmButtonCol = "#0094c5")
-  })
+  #observeEvent(input$hilfe, {
+   # # Show a modal when the button is pressed
+    #shinyalert(title = "Themen der psychologischen Fachliteratur",
+     #          text = "Die Themen wurden automatisch aus PSYNDEX-Einträgen generiert. \n\nSie können", 
+      #         type = "", animation = TRUE, confirmButtonCol = "#0094c5")
+  #})
   
   # reset buttons
   # slider reset
@@ -439,7 +440,7 @@ server <- function(input, output, session) {
            main = list(paste("Zeitlicher Verlauf von Thema", inp), cex = 1),
            panel = function(...) {
              panel.abline(h = (1/k)*100, lty = "dashed", col = "#83227a")
-             panel.text(1987, (1/k)*100*1.25, labels = "Durchschnittsprävalenz aller Themen", col = "#83227a", cex = 0.65)
+             panel.text(1980, (1/k)*100*1.2, pos = 4, labels = "Durchschnittsprävalenz aller Themen", col = "#83227a", cex = 0.55)
              #panel.text(1982, (1/k)*100*0.8, labels = "unter dem Durchschnitt", col = "#83227a", cex = 0.7)
              panel.xyplot(...)
            },
@@ -493,7 +494,7 @@ server <- function(input, output, session) {
     plot(forecast, ylim = c(0, max(theta_mean_by_year_ts[,inp]*100)), showgap = FALSE, PI = TRUE,
          main = list(paste("Beobachteter und erwarteter Verlauf von Thema", inp), cex = 1.25), # remove main to see method
          col = col_bars, fcol = "#83227a",
-         ylab = "Prävalenz", cex=0.6)
+         ylab = "Prävalenz", cex = 0.6)
     lines(theta_mean_by_year_ts[,inp]*100)
     grid(NULL, NULL, lty = "solid", col = "lightgrey")
     abline(v = finalInput(), lty = "dashed", col = col_bars, lwd = 2)
