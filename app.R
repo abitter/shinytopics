@@ -73,7 +73,7 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("Shiny Topics v1.0.1"),
+   titlePanel("Shiny Topics v1.0.2"), # 22.01.2020
   
      # Sidebar
    sidebarLayout(
@@ -518,6 +518,8 @@ server <- function(input, output, session) {
     table_popular[,4] <- round(table_popular[,4], 4)*100
     topicnum <- table_popular[,2]
     table_popular$Recherche <- createLink(table_popular$Thema, booster, topicnum)
+    # Ränge entfernen
+    table_popular <- table_popular[,-1]
     return(table_popular)
   }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe', extensions = 'Responsive',
   options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
@@ -534,6 +536,8 @@ server <- function(input, output, session) {
     table_popular_range[,4] <- round(table_popular_range[,4], 4)*100
     topicnum <- table_popular_range[,2]
     table_popular_range$Recherche <- createLink(table_popular_range$Thema, booster, topicnum)
+    # Ränge entfernen
+    table_popular_range <- table_popular_range[,-1]
     return(table_popular_range)
   }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe', extensions = 'Responsive',
   options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
@@ -545,6 +549,8 @@ server <- function(input, output, session) {
     table_hot$Recherche <- createLink(table_hot$Thema, booster, topicnum)
     names(table_hot)[2] <- ("ID")
     #names(table_hot) <- c("Rank", "No.", "Topic", "Search")
+    # Ränge entfernen
+    table_hot <- table_hot[,-1]
     return(table_hot)
     }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe', extensions = 'Responsive',
     options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
@@ -555,6 +561,8 @@ server <- function(input, output, session) {
     topicnum <- table_cold[,2]
     table_cold$Recherche <- createLink(table_cold$Thema, booster, topicnum)
     names(table_cold)[2] <- ("ID")
+    # Ränge entfernen
+    table_cold <- table_cold[,-1]
     return(table_cold)
     }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe', extensions = 'Responsive',
     options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
