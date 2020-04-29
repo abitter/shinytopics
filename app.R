@@ -73,7 +73,7 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("Shiny Topics v1.0.2"), # 22.01.2020
+   titlePanel("Shiny Topics v1.0.3"), # 29.04.2020
   
      # Sidebar
    sidebarLayout(
@@ -265,18 +265,55 @@ server <- function(input, output, session) {
   # modal pop up: https://stackoverflow.com/questions/50326110/r-shiny-popup-window-before-app
   # shiny alert: https://deanattali.com/blog/shinyalert-package/
 
-  popup <- shinyalert(html = TRUE, title = "<h2 style='color:#333b8f'>Erkunden Sie Themen und Trends der 
-                      psychologischen Fachliteratur</h3>",
-                      text = "Die Themen wurden automatisch aus PSYNDEX-Einträgen generiert.
-                      <br><br>Mit dem Button
-                      <font color='#333b8f'><b>Suche in PSYNDEX</b></font>
-                      können Sie zu jedem Thema relevante Literatur recherchieren.
-                      <br><br><br><br><font size='-1'>Ein Angebot von:</font><br>
-                      <img src = 'logo.png' width = 50% height = 50%>
-                      <br><br>", 
+  popup <- shinyalert(html = TRUE, 
+                      
+                      # HTML improvements by ttr@leibniz-psychology.org
+                      
+                      title = '<h1 style="color: #333b8f; margin-top: 2rem; text-align:center; font-weight: bold; font-size: 24px; line-height: 1.2">
+                      Erkunden Sie Themen und Trends der Psychologie
+                      </h1>',
+                      
+                      text = 
+                        '<div style="margin: 2rem; color: #333333; text-align:left;">
+                        <p style="font-size:18px; line-height:1.45">
+                        Die Themen wurden <strong>automatisiert</strong> mit Algorithmen aus dem Maschinenlernen aus PSYNDEX Nachweisen ermittelt.
+                        </p>
+                        
+                        <p style="color: #333b8f; margin-top: 1rem; font-size:18px; line-height:1.45">
+                        <strong>Daher sollten Schlüsse mit Bedacht gezogen werden.</strong>
+                        </p>
+                        <p style="margin-top: 1rem; font-size:18px; line-height:1.45">
+                        Jedes Thema wird durch fünf Begriffe charakterisiert. Um ein Thema besser zu interpretieren, 
+                        kann relevante Literatur mit <strong>Suche in PSYNDEX</strong> recherchiert werden.
+                        </p>
+                        </div>',
+                      
                       type = "", animation = TRUE, confirmButtonCol = "#333b8f", closeOnClickOutside = TRUE)
-
-  #showModal(popup)  
+  
+  
+  popup <- shinyalert(html = TRUE, 
+                      
+                      title = "<h3 style='color:#333b8f'>
+                      <b>Erkunden Sie Themen und Trends der Psychologie</b>
+                      </h3>",
+                      
+                      text = "<p style='text-align:left;'>
+                      
+                      Die Themen wurden <strong>automatisiert</strong> mit Algorithmen aus dem Maschinenlernen ermittelt.
+                      
+                      <br><font color='#333b8f'><b>Daher sollten Schlüsse mit Bedacht gezogen werden.</b></font>
+                      
+                      <br><br>Jedes Thema wird durch fünf Begriffe charakterisiert. Um ein Thema besser zu interpretieren, 
+                      kann relevante Literatur mit <b>Suche in PSYNDEX</b> recherchiert werden.
+                      </p>",
+                      
+                      #<br><br><br><br><font size='-1'>Ein Angebot von:</font><br>
+                      #<img src = 'logo.png' width = 50% height = 50%>
+                      #<br><br>, 
+                 
+                      type = "", animation = TRUE, confirmButtonCol = "#333b8f", closeOnClickOutside = TRUE)
+  
+  showModal(popup)  
   
   
   #observeEvent(input$hilfe, {
