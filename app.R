@@ -73,7 +73,7 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("Shiny Topics v1.0.3"), # 29.04.2020
+   titlePanel("Shiny Topics v1.0.4"), # 03.06.2020
   
      # Sidebar
    sidebarLayout(
@@ -291,27 +291,27 @@ server <- function(input, output, session) {
                       type = "", animation = TRUE, confirmButtonCol = "#333b8f", closeOnClickOutside = TRUE)
   
   
-  popup <- shinyalert(html = TRUE, 
-                      
-                      title = "<h3 style='color:#333b8f'>
-                      <b>Erkunden Sie Themen und Trends der Psychologie</b>
-                      </h3>",
-                      
-                      text = "<p style='text-align:left;'>
-                      
-                      Die Themen wurden <strong>automatisiert</strong> mit Algorithmen aus dem Maschinenlernen ermittelt.
-                      
-                      <br><font color='#333b8f'><b>Daher sollten Schlüsse mit Bedacht gezogen werden.</b></font>
-                      
-                      <br><br>Jedes Thema wird durch fünf Begriffe charakterisiert. Um ein Thema besser zu interpretieren, 
-                      kann relevante Literatur mit <b>Suche in PSYNDEX</b> recherchiert werden.
-                      </p>",
+  #popup <- shinyalert(html = TRUE, 
+   #                   
+    #                  title = "<h3 style='color:#333b8f'>
+     #                 <b>Erkunden Sie Themen und Trends der Psychologie</b>
+      #                </h3>",
+       #               
+        #              text = "<p style='text-align:left;'>
+         #             
+          #            Die Themen wurden <strong>automatisiert</strong> mit Algorithmen aus dem Maschinenlernen ermittelt.
+           #           
+            #          <br><font color='#333b8f'><b>Daher sollten Schlüsse mit Bedacht gezogen werden.</b></font>
+             #         
+              #        <br><br>Jedes Thema wird durch fünf Begriffe charakterisiert. Um ein Thema besser zu interpretieren, 
+               #       kann relevante Literatur mit <b>Suche in PSYNDEX</b> recherchiert werden.
+                #      </p>",
                       
                       #<br><br><br><br><font size='-1'>Ein Angebot von:</font><br>
                       #<img src = 'logo.png' width = 50% height = 50%>
                       #<br><br>, 
                  
-                      type = "", animation = TRUE, confirmButtonCol = "#333b8f", closeOnClickOutside = TRUE)
+                 #     type = "", animation = TRUE, confirmButtonCol = "#333b8f", closeOnClickOutside = TRUE)
   
   showModal(popup)  
   
@@ -523,11 +523,17 @@ server <- function(input, output, session) {
     #lines(x = years2, y = lm1$fitted.values, col = "red", lwd = 2)
     #lines(x = years, y = linreg, col = "red", lwd = 2, lty = "dashed")
     #
+    
     # forecast with MLP #
+    
     window <- window(theta_mean_by_year_ts[, inp], start = 1980, end = finalInput())
-    mlp <- plotXY(1:length(window), window, complexity = 2)
-    mlp_ts <- ts(mlp$prediction, start = 1980)
-    forecast <- forecast(mlp_ts*100, h = length(theta_mean_by_year_ts[, inp]) - length(window))
+    
+    #mlp <- plotXY(1:length(window), window, complexity = 2)
+    #mlp_ts <- ts(mlp$prediction, start = 1980)
+    # forecast <- forecast(mlp_ts*100, h = length(theta_mean_by_year_ts[, inp]) - length(window))
+    
+    forecast <- forecast(window*100, h = length(theta_mean_by_year_ts[, inp]) - length(window))
+    
     plot(forecast, ylim = c(0, max(theta_mean_by_year_ts[,inp]*100)), showgap = FALSE, PI = TRUE,
          main = list(paste("Beobachteter und erwarteter Verlauf von Thema", inp), cex = 1.25), # remove main to see method
          col = col_bars, fcol = "#83227a",
