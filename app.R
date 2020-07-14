@@ -73,7 +73,7 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("Shiny Topics v1.0.4"), # 03.06.2020
+   titlePanel("Shiny Topics v1.0.5"), # 14.07.2020
   
      # Sidebar
    sidebarLayout(
@@ -532,7 +532,7 @@ server <- function(input, output, session) {
     #mlp_ts <- ts(mlp$prediction, start = 1980)
     # forecast <- forecast(mlp_ts*100, h = length(theta_mean_by_year_ts[, inp]) - length(window))
     
-    forecast <- forecast(window*100, h = length(theta_mean_by_year_ts[, inp]) - length(window))
+    forecast <- forecast(auto.arima(window*100), h = length(theta_mean_by_year_ts[, inp]) - length(window))
     
     plot(forecast, ylim = c(0, max(theta_mean_by_year_ts[,inp]*100)), showgap = FALSE, PI = TRUE,
          main = list(paste("Beobachteter und erwarteter Verlauf von Thema", inp), cex = 1.25), # remove main to see method
