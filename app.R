@@ -73,7 +73,8 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   titlePanel("Shiny Topics v1.0.5"), # 14.07.2020
+   #titlePanel("Shiny Topics v1.0.5.1"), # 14.07.2020
+   titlePanel("PsychTopics"),
   
      # Sidebar
    sidebarLayout(
