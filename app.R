@@ -73,7 +73,7 @@ ui <- fluidPage(
   #tags$style(HTML('#reset2{background-color:lightgrey}')),
   
   # Application title
-   #titlePanel("Shiny Topics v1.0.5.1"), # 14.07.2020
+   #titlePanel("Shiny Topics v1.0.5.2"), # 21.10.2020
    titlePanel("PsychTopics"),
   
      # Sidebar
@@ -142,7 +142,7 @@ ui <- fluidPage(
                 "automatisiert aus",
                 a("PSYNDEX.", href = "https://www.psyndex.de", target="_blank"), "erstellt."),
                 #br(),
-                p("Die Themen enthalten die", a(em("PSYNDEX Terms."), href = "https://www.psyndex.de/index.php?wahl=products&uwahl=printed&uuwahl=psyndexterms", 
+                p("Die Themen enthalten die", a(em("PSYNDEX Terms."), href = "https://www.psyndex.de/ueber/inhalte-aufbau/schlagwoerter-klassifikationen/#schlagw%C3%B6rter-psyndex-terms", 
                               target="_blank"))
                 ),
        
