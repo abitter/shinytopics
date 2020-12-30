@@ -1,5 +1,5 @@
 #
-# PsychTopics
+# Shiny Topics
 ##############
 # André Bittermann, ZPID, Trier
 # abi@leibniz-psychology.org
@@ -7,19 +7,14 @@
 # This app displays research topics in psychology
 # identified using topic modeling of PSYNDEX data
 #    
-# Reference: Bittermann (2019). Development of a user-friendly app for exploring and analyzing research topics in psychology. 
-# In G. Catalano, C. Daraio, M. Gregori, H. F. Moed & G. Ruocco (Hrsg.), Proceedings of the 17th Conference of the 
-# International Society for Scientometrics and Informetrics (2634–2635). Rom: Edizioni Efesto. 
-# http://dx.doi.org/10.23668/psycharchives.2521
-
-
+# Reference: Bittermann & Fischer (2018), doi: https://doi.org/10.1027/2151-2604/a000318
 
 
 # packages ----
-
 library(shiny)
 library(shinyWidgets)
 library(shinyalert)
+library(shinyBS)
 library(forecast)
 library(nnet)
 library(lattice)
@@ -28,15 +23,17 @@ library(plotrix)
 
 
 # data ----
-# result of topic modeling (LDA.R)
+# this data is the result of topic modeling
+# please contact the author if you need more information
 theta_year <- readRDS("data/theta_year.rds") # theta_mean_by_year with labels instead of topic numbers
 theta_mean_by_year <- readRDS("data/theta_mean_by_year.rds") # mean theta of topic by year
 theta_mean_by_year_time <- readRDS("data/theta_mean_by_year_time.rds") # for trend analysis
 theta_mean_by_year_ts <- readRDS("data/theta_mean_by_year_ts.rds") # for trend analysis
 years <- readRDS("data/years.rds") # a list of publication years
 topic <- readRDS("data/topic.rds") # a list of topics and top terms
-booster <- readRDS("data/booster.rds") # a table with factors for term boosting in PubPsych.eu
+booster <- readRDS("data/booster.rds") # a table with factors for term boosting in PubPsych
 k <- 325 # set number of topics in the model (all topics, not only the reliable ones)
+
 
 # sources ----
 source("trends.R")
@@ -46,7 +43,7 @@ source("quantqual.R")
 
 # function for aligning slider
 alignCenter <- function(el) {
-  htmltools::tagAppendAttributes(el, style="margin-left:auto;margin-right:auto;")
+  htmltools::tagAppendAttributes(el, style = "margin-left:auto;margin-right:auto;")
 }
 
 
@@ -69,17 +66,40 @@ ui <- fluidPage(
   # Tab color; https://stackoverflow.com/questions/35025145/background-color-of-tabs-in-shiny-tabpanel/43201952#43201952
   tags$style(HTML(".tabbable > .nav > li[class=active]    > a {background-color: #0094c5; color:white}")),
   
+  # move position of output objects
+  #tags$style(type='text/css', "#circleplot { width:100%; margin-top: 15px;}"),
+  
+  # color of clear search button
+  #tags$style(HTML('#reset2{background-color:lightgrey}')),
+  
   # Application title
-   titlePanel("PsychTopics"), #v1.0.6   30.12.2020
+   #titlePanel("Shiny Topics v1.0.6"), # 30.12.2020
+   titlePanel("PsychTopics"),
   
      # Sidebar
    sidebarLayout(
      sidebarPanel(width = 3,
        
+       # get screen size: https://stackoverflow.com/questions/36995142/get-the-size-of-the-window-in-shiny/37060206
+       #tags$head(tags$script('
+        #                        var dimension = [0, 0];
+         #                       $(document).on("shiny:connected", function(e) {
+          #                          dimension[0] = window.innerWidth;
+           #                         dimension[1] = window.innerHeight;
+            #                        Shiny.onInputChange("dimension", dimension);
+             #                   });
+              #                  $(window).resize(function(e) {
+               #                     dimension[0] = window.innerWidth;
+                #                    dimension[1] = window.innerHeight;
+                 #                   Shiny.onInputChange("dimension", dimension);
+                  #              });
+                   #         ')),
+                  
        # slider colors (add line for every slider)
        tags$style(HTML(".js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #0094c5}")),
        tags$style(HTML(".js-irs-1 .irs-single, .js-irs-1 .irs-bar-edge, .js-irs-1 .irs-bar {background: #0094c5}")),
        tags$style(HTML(".js-irs-2 .irs-single, .js-irs-2 .irs-bar-edge, .js-irs-2 .irs-bar {background: #0094c5}")),
+
        
        # color of PSYNDEX search buttom
        # https://stackoverflow.com/questions/46232856/applying-2-different-css-styles-on-shiny-button
@@ -99,8 +119,14 @@ ui <- fluidPage(
                        }
                        ")),
        
+       # numericInput("yearpop", #width = "50%",
+       #           label = h4("Jahr anzeigen:"),
+        #          value = as.numeric(years[length(years)]), 
+         #         min = 1980, 
+          #        max = as.numeric(years[length(years)])),
+   
        sliderInput("range",
-                    label = h4("Set range of publication years:"),
+                    label = h4("Zeitraum festlegen:"),
                     min = 1980,
                     max = as.numeric(years[length(years)]),
                     value = c(2015, as.numeric(years[length(years)])),
@@ -111,44 +137,50 @@ ui <- fluidPage(
        br(),
        br(),
        helpText(br(),
-                p("The psychological research topics from the German-speaking countries were identified automatically using",
-                a("Topic Modeling.", href = "http://dx.doi.org/10.23668/psycharchives.2521", target = "_blank"), 
-                strong("Conclusions should be drawn carefully.")),
+                p("Die Themen der psychologischen Fachliteratur aus dem deutschsprachigen Raum wurden mit",
+                a("Topic Modeling", href = "https://doi.org/10.1027/2151-2604/a000318", target="_blank"),
+                "automatisiert aus",
+                a("PSYNDEX.", href = "https://www.psyndex.de", target="_blank"), "erstellt."),
                 #br(),
-                p("The topics consist of",  a("standardized keywords", 
-                                              href = "https://www.psyndex.de/ueber/inhalte-aufbau/schlagwoerter-klassifikationen/#schlagw%C3%B6rter-psyndex-terms", 
-                                              target="_blank"), "of the psychological reference database",
-                  a("PSYNDEX.", href = "https://www.psyndex.de/ueber/steckbrief/", target = "_blank"))
+                p("Die Themen enthalten die", a(em("PSYNDEX Terms."), href = "https://www.psyndex.de/ueber/inhalte-aufbau/schlagwoerter-klassifikationen/#schlagw%C3%B6rter-psyndex-terms", 
+                              target="_blank"))
                 ),
-       helpText("Topic", strong(em("prevalence")), "is the mean topic probability in the corpus of publications (in percent)."),
+       
+       helpText("Die", strong(em("Prävalenz")), "beschreibt die durchschnittliche Wahrscheinlichkeit dieses Themas in den Publikationen in Prozent."),
        br(),
-       #helpText(a("Feedback", href = "https://leibniz-psychology.org/en/staff/profile-andre-bittermann/", target="_blank")),
-       helpText(a("Feedback", href = "https://forms.gle/bzsC6AJdTTBY3RDH8", target = "_blank")),
+       helpText(a("Feedback", href = "https://forms.gle/bzsC6AJdTTBY3RDH8", target="_blank")),
        br(),
        br(),
-       a(img(src = "logo.png", height = "75%", width = "75%"), href = "https://leibniz-psychology.org/en/", target = "_blank")
+       br(),
+       a(img(src = "logo.png", height = "75%", width = "75%"), href = "https://www.leibniz-psychology.org", target="_blank")
        ),
       
       # Main Panel
       mainPanel(width = 9, 
         tabsetPanel(
           # slider color
-          tabPanel("Popular by Year", 
+          tabPanel("Themen eines Jahres",
                    br(),
                    plotOutput("topicchart"),
+                   #br(),
                    sliderInput("yearpop",
-                               label = "Select year:",
+                               label = "Jahr wählen",
                                min = 1980,
                                max = as.numeric(years[length(years)]),
                                value = years[length(years)],
                                sep = "",
                                #width = "80%",
                                ticks = FALSE),
+                   #numericInput("yearpop", #width = "50%",
+                    #                   label = strong("Jahr wählen:"),
+                     #                  value = as.numeric(years[length(years)]), 
+                      #                 min = 1980, 
+                       #                max = as.numeric(years[length(years)])),
                    br(),
                    DT::dataTableOutput("popular"),
                    br()
                    ), 
-          tabPanel("Popular by Period", 
+          tabPanel("Themen eines Zeitraums", 
                    br(),
                    plotOutput("topicchart2"),
                    br(),
@@ -167,50 +199,53 @@ ui <- fluidPage(
                    br(),
                    DT::dataTableOutput("coldterms")
                    ),
-          tabPanel("All Topics", 
+          tabPanel("Alle Themen", 
                    column(6, 
                           br(),
                           plotOutput("topicplot")),
                    column(6,
                           plotOutput("circleplot"),
-                          p("The circle plot shows whether a topic is addressed above or below average 
-                            in the psychological literature.", align = "center")
+                          p("Das Kreisdiagramm zeigt Ihnen an, ob ein Thema über- oder unterdurschnittlich 
+                            stark in der psychologischen Fachliteratur aufgegriffen wird.", align = "center")
                           ),
                    br(),
                    searchInput(
-                     inputId = "searchbox", label = "Search for topics",
-                     placeholder = "Please enter search term",
+                     inputId = "searchbox", label = "Suche nach Themen",
+                     placeholder = "Bitte Suchbegriff eingeben",
                      btnSearch = icon("search"),
                      btnReset = icon("remove"),
                      width = "450px"),
-                   p("Possible search terms can be found", 
-                     a("here", href = "https://fremdauswerter.zpid.de/thesaurus.php", target="_blank")),
+                   p("Mögliche Suchbegriffe finden Sie", 
+                     a("hier", href = "https://fremdauswerter.zpid.de/thesaurus.php", target="_blank")),
                    br(),
+                   #p(actionButton("reset2", strong("Suche löschen")), align = "right"),
                    DT::dataTableOutput("topiclist")
                    ),
-          tabPanel("Expected Trends", 
+          tabPanel("Erwartete Verläufe", 
                    column(6, 
                           br(),
                           br(),
-                          h4("Compare the observed with the expected course", align = "center"),
-                          h4("at a desired point in time.", align = "center"),
+                          h4("Vergleichen Sie den beobachteten mit dem erwarteten Verlauf", align = "center"),
+                          h4("ab einem gewünschten Zeitpunkt.", align = "center"),
                           br(),
                           br(),
                           searchInput(
-                            inputId = "searchbox2", label = "Search for topics",
-                            placeholder = "Please enter search term",
+                            inputId = "searchbox2", label = "Suche nach Themen",
+                            placeholder = "Bitte Suchbegriff eingeben",
                             btnSearch = icon("search"),
                             btnReset = icon("remove"),
                             width = "450px"),
-                          p("A list of possible search terms can be found", 
-                            a("here", href = "https://www.psyndex.de/pub/info/PSYNDEXterms2016.pdf", target="_blank")),
+                          p("Mögliche Suchbegriffe finden Sie", 
+                            a("hier", href = "https://www.psyndex.de/pub/info/PSYNDEXterms2016.pdf", target="_blank")),
                           br(),
                           DT::dataTableOutput("eventtable")),
                    column(6,
                           br(),
                           plotOutput("eventplot"),
+                          #br(),
+                          #verbatimTextOutput(outputId = "info"),
                           alignCenter(sliderInput("year",
-                                      label = "Select year:",
+                                      label = "Zeitpunkt festlegen:",
                                       min = 1981,
                                       max = as.numeric(years[length(years)]) - 2,
                                       value = 2000,
@@ -230,32 +265,64 @@ server <- function(input, output, session) {
   
   # modal pop up: https://stackoverflow.com/questions/50326110/r-shiny-popup-window-before-app
   # shiny alert: https://deanattali.com/blog/shinyalert-package/
-  
+
   popup <- shinyalert(html = TRUE, 
                       
                       # HTML improvements by ttr@leibniz-psychology.org
                       
                       title = '<h1 style="color: #333b8f; margin-top: 2rem; text-align:center; font-weight: bold; font-size: 24px; line-height: 1.2">
-                      Explore topics and trends in psychology
+                      Erkunden Sie Themen und Trends der Psychologie
                       </h1>',
-                        
-                        text = 
+                      
+                      text = 
                         '<div style="margin: 2rem; color: #333333; text-align:left;">
                         <p style="font-size:18px; line-height:1.45">
-                        The topics were derived <strong>automatically</strong> from PSYNDEX records using machine learning algorithms.
+                        Die Themen wurden <strong>automatisiert</strong> mit Algorithmen aus dem Maschinenlernen aus PSYNDEX Nachweisen ermittelt.
                         </p>
                         
                         <p style="color: #333b8f; margin-top: 1rem; font-size:18px; line-height:1.45">
-                        <strong>Thus, conclusions should be drawn carefully.</strong>
+                        <strong>Daher sollten Schlüsse mit Bedacht gezogen werden.</strong>
                         </p>
                         <p style="margin-top: 1rem; font-size:18px; line-height:1.45">
-                        Each topic is characterized by five terms. To better interpret a topic, you can check relevant literature by clicking the button <strong>Search PSYNDEX</strong>.
+                        Jedes Thema wird durch fünf Begriffe charakterisiert. Um ein Thema besser zu interpretieren, 
+                        kann relevante Literatur mit <strong>Suche in PSYNDEX</strong> recherchiert werden.
                         </p>
                         </div>',
-                  
+                      
                       type = "", animation = TRUE, confirmButtonCol = "#333b8f", closeOnClickOutside = TRUE)
   
-  showModal(popup) 
+  
+  #popup <- shinyalert(html = TRUE, 
+   #                   
+    #                  title = "<h3 style='color:#333b8f'>
+     #                 <b>Erkunden Sie Themen und Trends der Psychologie</b>
+      #                </h3>",
+       #               
+        #              text = "<p style='text-align:left;'>
+         #             
+          #            Die Themen wurden <strong>automatisiert</strong> mit Algorithmen aus dem Maschinenlernen ermittelt.
+           #           
+            #          <br><font color='#333b8f'><b>Daher sollten Schlüsse mit Bedacht gezogen werden.</b></font>
+             #         
+              #        <br><br>Jedes Thema wird durch fünf Begriffe charakterisiert. Um ein Thema besser zu interpretieren, 
+               #       kann relevante Literatur mit <b>Suche in PSYNDEX</b> recherchiert werden.
+                #      </p>",
+                      
+                      #<br><br><br><br><font size='-1'>Ein Angebot von:</font><br>
+                      #<img src = 'logo.png' width = 50% height = 50%>
+                      #<br><br>, 
+                 
+                 #     type = "", animation = TRUE, confirmButtonCol = "#333b8f", closeOnClickOutside = TRUE)
+  
+  showModal(popup)  
+  
+  
+  #observeEvent(input$hilfe, {
+   # # Show a modal when the button is pressed
+    #shinyalert(title = "Themen der psychologischen Fachliteratur",
+     #          text = "Die Themen wurden automatisch aus PSYNDEX-Einträgen generiert. \n\nSie können", 
+      #         type = "", animation = TRUE, confirmButtonCol = "#0094c5")
+  #})
   
   # reset buttons
   # slider reset
@@ -283,13 +350,12 @@ server <- function(input, output, session) {
     input$yearpop
   })
   
-  # transform invalid year input
+  # transform invalid year input (expected)
   finalInput <- reactive({
     if (input$year < 1981) return(1981)
     if (input$year > 2015) return(2015)
     input$year
   })
-  
 
   # clickable selection of data table rows
   select <- reactive({
@@ -323,7 +389,14 @@ server <- function(input, output, session) {
     trends.ab(input$range[1]-1979, input$range[2]-1979, 
               theta_year, theta_mean_by_year, theta_mean_by_year_time, theta_mean_by_year_ts, years, topic)
   })
+  
 
+  
+  # info box for development
+  # output$info <- renderText({
+  #  paste(input$dimension[1], input$dimension[2])
+  #})
+  
   
   ### plots ###
   
@@ -332,10 +405,12 @@ server <- function(input, output, session) {
   
   output$topicchart <- renderPlot({
     colors[(11-select_popular())] <- col_highlight
+    #barchart(head(sort(theta_mean_by_year[as.character(finalInput()), ], decreasing = TRUE), 10)[10:1],
     barchart(head(sort(theta_mean_by_year[as.character(finalInputPop()), ]*100, decreasing = TRUE), 10)[10:1], 
              col = colors, 
-             main = list(paste("Popular topics in", finalInputPop()), cex = 1.75),
-             xlab = "Prevalence",
+             main = list(paste("Populäre Themen im Jahr", finalInputPop()), cex = 1.75),
+             #xlab = "Mittlere Dokument-Topic-Wahrscheinlichkeit",
+             xlab = "Prävalenz",
              scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.5))) # label font size
   })
   
@@ -343,8 +418,9 @@ server <- function(input, output, session) {
     colors[(11-select_popular_range())] <- col_highlight
     barchart(head(sort(colMeans(theta_mean_by_year[(input$range[1]-1979):(input$range[2]-1979), ]*100), decreasing = TRUE), 10)[10:1],
              col = colors, 
-             main = list(paste0("Popular topics in years ", input$range[1], "–", input$range[2]), cex = 1.75),
-             xlab = "Prevalence",
+             main = list(paste0("Populäre Themen im Zeitraum ", input$range[1], "–", input$range[2]), cex = 1.75),
+             #xlab = "Mittlere Dokument-Topic-Wahrscheinlichkeit",
+             xlab = "Prävalenz",
              scales=list(tck=c(1,0), x=list(cex=1), y=list(cex=1.5))) # label font size
   })
   
@@ -354,11 +430,13 @@ server <- function(input, output, session) {
            layout = c(5,2),
            col = c("black"),
            ylim = c(0, max(theta_mean_by_year)*100),
-           ylab = list("Prevalence", cex = 0.6),
+           #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex = 0.6),
+           ylab = list("Prävalenz", cex = 0.6),
            xlab = "",
            type = c("l", "g"),
            scales = list(x = list(alternating = FALSE), tck = c(1,0), y = list(cex = 0.6)),
-           main = list(paste0("Hot topics for the years ", input$range[1], "–", input$range[2]), cex = 1),
+           #main = list(paste0("Hot topics for the years ", input$range[1], "–", input$range[2]), cex = 1),
+           main = list(paste0("Hot Topics für den Zeitraum ", input$range[1], "–", input$range[2]), cex = 1),
            par.settings = list(strip.background = list(col = colors)),
            strip = function(..., bg) { # http://r.789695.n4.nabble.com/lattice-change-background-strip-color-in-one-panel-td3554612.html
              strip.default(..., 
@@ -372,11 +450,12 @@ server <- function(input, output, session) {
            layout = c(5,2),
            col = c("black"),
            ylim = c(0, max(theta_mean_by_year)*100),
-           ylab = list("Prevalence", cex = 0.6),
+           #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex = 0.6),
+           ylab = list("Prävalenz", cex = 0.6),
            xlab = "",
            type = c("l", "g"),
            scales = list(x = list(alternating = FALSE), tck = c(1,0), y = list(cex = 0.6)),
-           main = list(paste0("Cold topics for the years ", input$range[1], "–", input$range[2]), cex = 1),
+           main = list(paste0("Cold Topics für den Zeitraum ", input$range[1], "–", input$range[2]), cex = 1),
            par.settings = list(strip.background = list(col = colors)),
            strip = function(..., bg) {
              strip.default(...,
@@ -385,19 +464,22 @@ server <- function(input, output, session) {
   }, res = 125)
   
   output$topicplot <- renderPlot({
+    #xyplot(theta_mean_by_year_ts[,select()], # fixed total time interval
     inp <- topic[(grepl(search_lower(), topic$Thema)),][select(), 1] # get correct topic number from filtered list
     xyplot(window(theta_mean_by_year_ts*100, input$range[1], c(input$range[1], input$range[2]-input$range[1]+1))[,inp],
            col = col_bars,
            ylim = c(0, max(theta_mean_by_year)*100),
-           ylab = list("Prevalence", cex=0.6),
+           #ylab = list("Mittlere Dokument-Topic-Wahrscheinlichkeit", cex=0.6),
+           ylab = list("Prävalenz", cex=0.6),
            xlab = "",
            type = c("l", "g"),
            lwd = 3,
            scales = list(x = list(alternating = FALSE), tck = c(1,0), y = list(cex = 0.6)),
-           main = list(paste("Time course of Topic", inp), cex = 1),
+           main = list(paste("Zeitlicher Verlauf von Thema", inp), cex = 1),
            panel = function(...) {
              panel.abline(h = (1/k)*100, lty = "dashed", col = "#83227a")
-             panel.text(1980, (1/k)*100*1.2, pos = 4, labels = "Mean prevalence of all topics", col = "#83227a", cex = 0.55)
+             panel.text(1980, (1/k)*100*1.2, pos = 4, labels = "Durchschnittsprävalenz aller Themen", col = "#83227a", cex = 0.55)
+             #panel.text(1982, (1/k)*100*0.8, labels = "unter dem Durchschnitt", col = "#83227a", cex = 0.7)
              panel.xyplot(...)
            },
            par.settings = list(strip.background = list(col = col_bars)))
@@ -408,12 +490,15 @@ server <- function(input, output, session) {
     factor <- 40 # depends on number of topics k
     lim <- 0.18 # adjust depending on number of topics k
     plot(1, xlab="", ylab="", xaxt='n', yaxt='n', asp = 1, xlim = c(1-lim, 1+lim), ylim = c(1-lim, 1+lim),
-         main = list(paste0("Prevalence of Topic ", inp, " compared to max and average "), par(cex.main = 1)), type = "n")
+         #main = list(paste0("Prävalenz von Thema ", select(), ": ", round(topic[select(),3], 4)), par(cex.main = 1)), type="n")
+         main = list(paste0("Prävalenz von Thema ", inp, " im Vergleich "), par(cex.main = 1)), type = "n")
     plotrix::draw.circle(1, 1, topic[inp, 3]*factor, col=col_highlight, border=col_highlight) # current topic
     plotrix::draw.circle(1, 1, (mean(topic[,3]))*factor, border=col_bars, col="white", lty="solid", density=0) # average
+    #plotrix::draw.circle(1, 1, (1/(dim(topic)[1]))*factor, border=col_bars, col="white", lty="solid", density=0) # average if all topics are included
     plotrix::draw.circle(1, 1, max(topic[,3])*factor, border="black", col="white", lty="dotted", density=0) # max
+    #plotrix::draw.circle(1, 1, min(topic[,3])*factor, border="black", col="white", lty="solid", density=0) # min
     legend("bottomright",
-           legend=c("Maximum", "Average"), 
+           legend=c("Maximum", "Durchschnitt"), 
            col=c("black", col_bars), 
            lty=c("dotted", "solid"), 
            cex=0.6)
@@ -421,16 +506,39 @@ server <- function(input, output, session) {
   
   output$eventplot <- renderPlot({
     inp <- topic[(grepl(search_lower2(), topic$Thema)),][select_event(), 1]
+    # linear regression
+    #years2 <- 1980:finalInput()
+    #lm1 <- lm(theta_mean_by_year[1:(finalInput()-1980+1), inp] ~ years2)
+    #linreg <- list()
+    #linreg[[1]] <- lm1$fitted.values
+    #linreg[[2]] <- lm1$fitted.values[length(lm1$fitted.values)] + lm1$coefficients[2]
+    #for (i in 3:(length(theta_mean_by_year[,1]) - length(lm1$fitted.values) + 1)){
+    #  linreg[[i]] <- linreg[[i-1]] + lm1$coefficients[2]
+    #}
+    #linreg <- unlist(linreg)
+    #names(linreg) <- years
+    #
+    #plot(window(theta_mean_by_year_ts, input$range[1], c(input$range[1], input$range[2]-input$range[1]+1))[, inp], 
+    #     type = "l", col = col_bars, ylab = list("Prävalenz", cex = 0.8), xlab = "", lwd = 3, #ylim = c(0, 0.04),
+    #     main = list(paste("Zeitlicher Verlauf von Thema", inp), cex = 1.25))
+    #lines(x = years2, y = lm1$fitted.values, col = "red", lwd = 2)
+    #lines(x = years, y = linreg, col = "red", lwd = 2, lty = "dashed")
+    #
+    
+    # forecast with MLP #
+    
     window <- window(theta_mean_by_year_ts[, inp], start = 1980, end = finalInput())
     
     #mlp <- plotXY(1:length(window), window, complexity = 2)
     #mlp_ts <- ts(mlp$prediction, start = 1980)
-    #forecast <- forecast(mlp_ts*100, h = length(theta_mean_by_year_ts[, inp]*100) - length(window))
+    # forecast <- forecast(mlp_ts*100, h = length(theta_mean_by_year_ts[, inp]) - length(window))
     
-    forecast <- forecast(auto.arima(window*100), h = length(theta_mean_by_year_ts[, inp]*100) - length(window))
+    forecast <- forecast(auto.arima(window*100), h = length(theta_mean_by_year_ts[, inp]) - length(window))
+    
     plot(forecast, ylim = c(0, max(theta_mean_by_year_ts[,inp]*100)), showgap = FALSE, PI = TRUE,
-         main = list(paste("Observed and expected trend of Topic", inp), cex = 1.25), # remove main to see method
-         col = col_bars, fcol = "#83227a")
+         main = list(paste("Beobachteter und erwarteter Verlauf von Thema", inp), cex = 1.25), # remove main to see method
+         col = col_bars, fcol = "#83227a",
+         ylab = "Prävalenz", cex = 0.6)
     lines(theta_mean_by_year_ts[,inp]*100)
     grid(NULL, NULL, lty = "solid", col = "lightgrey")
     abline(v = finalInput(), lty = "dashed", col = col_bars, lwd = 2)
@@ -440,7 +548,7 @@ server <- function(input, output, session) {
   ### data tables ##
   
   # options applied to all data tables
-  options(DT.options = list(pageLength = 10, language = list(url = '//cdn.datatables.net/plug-ins/1.10.19/i18n/English.json')))
+  options(DT.options = list(pageLength = 10, language = list(url = '//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/German.json')))
   
   # popular by year #
   output$popular <- DT::renderDataTable({
@@ -450,14 +558,14 @@ server <- function(input, output, session) {
     table_popular$NR <- as.numeric(names(head(sort(theta_mean_by_year[as.character(finalInputPop()), ], decreasing = TRUE), 10)[1:10]))
     rownames(table_popular) <- NULL
     table_popular[ ,c(1,2,3,4)] <- table_popular[ ,c(3,4,2,1)]
-    names(table_popular) <- c("Rank", "ID", "Topic", "Prevalence")
+    names(table_popular) <- c("Rang", "ID", "Thema", "Prävalenz")
     table_popular[,4] <- round(table_popular[,4], 4)*100
     topicnum <- table_popular[,2]
-    table_popular$Search <- createLink(table_popular$Topic, booster, topicnum)
-    # remove ranking
+    table_popular$Recherche <- createLink(table_popular$Thema, booster, topicnum)
+    # Ränge entfernen
     table_popular <- table_popular[,-1]
     return(table_popular)
-  }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe',  extensions = 'Responsive',
+  }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe', extensions = 'Responsive',
   options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
   
   # popular in range of years #
@@ -468,11 +576,11 @@ server <- function(input, output, session) {
     table_popular_range$NR <- as.numeric(names(head(sort(colMeans(theta_mean_by_year[(input$range[1]-1979):(input$range[2]-1979), ]), decreasing = TRUE), 10)[1:10]))
     rownames(table_popular_range) <- NULL
     table_popular_range[ ,c(1,2,3,4)] <- table_popular_range[ ,c(3,4,2,1)]
-    names(table_popular_range) <- c("Rank", "ID", "Topic", "Prevalence")
-    table_popular_range[,4] <- round(table_popular_range[,4], 4) *100
+    names(table_popular_range) <- c("Rang", "ID", "Thema", "Prävalenz")
+    table_popular_range[,4] <- round(table_popular_range[,4], 4)*100
     topicnum <- table_popular_range[,2]
-    table_popular_range$Search <- createLink(table_popular_range$Topic, booster, topicnum)
-    # remove ranking
+    table_popular_range$Recherche <- createLink(table_popular_range$Thema, booster, topicnum)
+    # Ränge entfernen
     table_popular_range <- table_popular_range[,-1]
     return(table_popular_range)
   }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe', extensions = 'Responsive',
@@ -483,8 +591,9 @@ server <- function(input, output, session) {
     table_hot <- trends()[[1]]
     topicnum <- table_hot[,2]
     table_hot$Recherche <- createLink(table_hot$Thema, booster, topicnum)
-    names(table_hot) <- c("Rank", "ID", "Topic", "Search")
-    # remove ranking
+    names(table_hot)[2] <- ("ID")
+    #names(table_hot) <- c("Rank", "No.", "Topic", "Search")
+    # Ränge entfernen
     table_hot <- table_hot[,-1]
     return(table_hot)
     }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe', extensions = 'Responsive',
@@ -495,8 +604,8 @@ server <- function(input, output, session) {
     table_cold <- trends()[[2]]
     topicnum <- table_cold[,2]
     table_cold$Recherche <- createLink(table_cold$Thema, booster, topicnum)
-    names(table_cold) <- c("Rank", "ID", "Topic", "Search")
-    # remove ranking
+    names(table_cold)[2] <- ("ID")
+    # Ränge entfernen
     table_cold <- table_cold[,-1]
     return(table_cold)
     }, escape = FALSE, rownames = FALSE, selection = list(mode = "single", selected = 1), class = 'stripe', extensions = 'Responsive',
@@ -508,15 +617,18 @@ server <- function(input, output, session) {
     topicnum <- topic[,1]
     topic$Recherche <- createLink(topic$Thema, booster, topicnum)
     topic[,3] <- round(topic[,3], 4)*100
-    names(topic) <- c("ID", "Topic", "Prevalence", "Search")
+    names(topic)[1] <- ("ID")
     return(topic)
     }, escape = FALSE, selection = list(mode = "single", selected = 1), rownames = FALSE, class = 'stripe', extensions = 'Responsive',
+    #options = list(sDom = '<"top">flrt<"bottom">ip', searchHighlight = TRUE))
     options = list(lengthChange = TRUE, info = TRUE, paging = TRUE, searching = FALSE))
+  # for clear search button:
+  #proxy <- dataTableProxy("topiclist")
   
   # event selection #
   output$eventtable <- DT::renderDataTable({
     list <- topic[(grepl(search_lower2(), topic$Thema)),][,-3]
-    names(list) <- c("ID", "Topic")
+    names(list)[1] <- ("ID")
     return(list)
   }, escape = FALSE, selection = list(mode = "single", selected = 1), rownames = FALSE, class = 'stripe', extensions = 'Responsive',
   options = list(lengthChange = FALSE, info = FALSE, paging = FALSE, searching = FALSE))
